@@ -1,0 +1,60 @@
+<header class="sticky top-0 z-50 border-b border-slate-200 bg-white/90 backdrop-blur dark:border-slate-800 dark:bg-slate-950/90">
+  <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
+    <a routerLink="/" class="flex items-center gap-2">
+      <span class="flex h-9 w-9 items-center justify-center rounded-full bg-brand-600 text-white">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="h-5 w-5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5V8a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v8.5M3 16.5a1.5 1.5 0 0 0 1.5 1.5h.5M3 16.5h18M19 16.5a1.5 1.5 0 0 1-1.5 1.5h-.5M7 18v1.25M17 18v1.25M6 12h12M8 4.5v1.5M16 4.5v1.5" />
+        </svg>
+      </span>
+      <span class="leading-tight">
+        <span class="block font-bold text-slate-900 dark:text-white">Transport Mauritanie</span>
+        <span class="block text-xs text-slate-500 dark:text-slate-400">Voyagez en toute sérénité</span>
+      </span>
+    </a>
+
+    <nav class="hidden items-center gap-7 text-sm font-medium text-slate-600 dark:text-slate-300 md:flex">
+      @for (link of navLinks; track link.path) {
+        <a
+          [routerLink]="link.path"
+          routerLinkActive="text-brand-600 dark:text-brand-500"
+          [routerLinkActiveOptions]="{ exact: link.path === '/' }"
+          class="relative pb-1 transition-colors hover:text-brand-600 dark:hover:text-brand-500"
+        >
+          {{ link.label }}
+        </a>
+      }
+    </nav>
+
+    <div class="flex items-center gap-3">
+      <button
+        type="button"
+        (click)="theme.toggle()"
+        class="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-600 transition-colors hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+        aria-label="Basculer le mode sombre"
+      >
+        @if (theme.isDark()) {
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="h-4 w-4">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2m0 14v2m9-9h-2M5 12H3m15.36 6.36-1.42-1.42M7.05 7.05 5.64 5.64m12.72 0-1.42 1.42M7.05 16.95l-1.42 1.42M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z" />
+          </svg>
+        } @else {
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="h-4 w-4">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z" />
+          </svg>
+        }
+      </button>
+
+      <a
+        routerLink="/connexion"
+        class="hidden rounded-lg border border-brand-600 px-4 py-2 text-sm font-semibold text-brand-600 transition-colors hover:bg-brand-50 dark:hover:bg-slate-800 sm:inline-block"
+      >
+        Connexion
+      </a>
+      <a
+        routerLink="/inscription"
+        class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-700"
+      >
+        Inscription
+      </a>
+    </div>
+  </div>
+</header>

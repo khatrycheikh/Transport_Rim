@@ -1,0 +1,65 @@
+<section class="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
+  <h1 class="text-3xl font-bold text-slate-900 dark:text-white">Contactez-nous</h1>
+  <p class="mt-2 text-slate-500 dark:text-slate-400">Une question, une suggestion ? Notre équipe vous répond rapidement.</p>
+
+  <div class="mt-8 grid grid-cols-1 gap-10 lg:grid-cols-3">
+    <form class="space-y-4 lg:col-span-2" (ngSubmit)="submit()">
+      @if (submitted()) {
+        <div class="rounded-lg bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+          Votre message a bien été envoyé. Merci !
+        </div>
+      }
+      <div>
+        <label class="mb-1.5 block text-sm font-semibold text-slate-700 dark:text-slate-200">Nom complet</label>
+        <input
+          type="text"
+          required
+          [(ngModel)]="name"
+          name="name"
+          class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-brand-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+        />
+      </div>
+      <div>
+        <label class="mb-1.5 block text-sm font-semibold text-slate-700 dark:text-slate-200">Email</label>
+        <input
+          type="email"
+          required
+          [(ngModel)]="email"
+          name="email"
+          class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-brand-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+        />
+      </div>
+      <div>
+        <label class="mb-1.5 block text-sm font-semibold text-slate-700 dark:text-slate-200">Message</label>
+        <textarea
+          rows="5"
+          required
+          [(ngModel)]="message"
+          name="message"
+          class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-brand-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+        ></textarea>
+      </div>
+      <button
+        type="submit"
+        class="rounded-lg bg-brand-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-brand-700"
+      >
+        Envoyer le message
+      </button>
+    </form>
+
+    <div class="space-y-6">
+      <div class="rounded-xl border border-slate-200 p-5 dark:border-slate-800">
+        <h3 class="font-semibold text-slate-900 dark:text-white">Téléphone</h3>
+        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">+222 44 19</p>
+      </div>
+      <div class="rounded-xl border border-slate-200 p-5 dark:border-slate-800">
+        <h3 class="font-semibold text-slate-900 dark:text-white">Email</h3>
+        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">contact&#64;transport-mr.com</p>
+      </div>
+      <div class="rounded-xl border border-slate-200 p-5 dark:border-slate-800">
+        <h3 class="font-semibold text-slate-900 dark:text-white">Adresse</h3>
+        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Nouakchott, Mauritanie</p>
+      </div>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,27 @@
+<section class="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8">
+  <h1 class="text-3xl font-bold text-slate-900 dark:text-white">À propos de Transport Mauritanie</h1>
+  <p class="mt-4 text-slate-600 dark:text-slate-300">
+    Transport Mauritanie est la plateforme de référence pour la réservation de billets de bus en ligne
+    en Mauritanie. Nous connectons les voyageurs aux meilleures compagnies de transport du pays pour
+    rendre chaque trajet simple, sûr et confortable.
+  </p>
+
+  <div class="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-3">
+    @for (stat of [
+      { value: '5+', label: 'Compagnies partenaires' },
+      { value: '20+', label: 'Destinations' },
+      { value: '10k+', label: 'Voyageurs satisfaits' },
+    ]; track stat.label) {
+      <div class="rounded-xl border border-slate-200 p-6 text-center dark:border-slate-800">
+        <div class="text-3xl font-bold text-brand-600">{{ stat.value }}</div>
+        <div class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ stat.label }}</div>
+      </div>
+    }
+  </div>
+
+  <h2 class="mt-12 text-2xl font-bold text-slate-900 dark:text-white">Notre mission</h2>
+  <p class="mt-3 text-slate-600 dark:text-slate-300">
+    Faciliter les déplacements à travers la Mauritanie en offrant une expérience de réservation
+    rapide, sécurisée et accessible à tous, où que vous soyez dans le pays.
+  </p>
+</section>

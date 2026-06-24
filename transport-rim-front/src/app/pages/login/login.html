@@ -1,0 +1,38 @@
+<section class="mx-auto flex max-w-md flex-col px-4 py-16 sm:px-6">
+  <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Connexion</h1>
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Accédez à votre compte pour gérer vos réservations.</p>
+
+  <form class="mt-8 space-y-4" (ngSubmit)="submit()">
+    <div>
+      <label class="mb-1.5 block text-sm font-semibold text-slate-700 dark:text-slate-200">Email</label>
+      <input
+        type="email"
+        required
+        [(ngModel)]="email"
+        name="email"
+        class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-brand-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+      />
+    </div>
+    <div>
+      <label class="mb-1.5 block text-sm font-semibold text-slate-700 dark:text-slate-200">Mot de passe</label>
+      <input
+        type="password"
+        required
+        [(ngModel)]="password"
+        name="password"
+        class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-brand-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+      />
+    </div>
+    <button
+      type="submit"
+      class="w-full rounded-lg bg-brand-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-brand-700"
+    >
+      Se connecter
+    </button>
+  </form>
+
+  <p class="mt-6 text-center text-sm text-slate-500 dark:text-slate-400">
+    Pas encore de compte ?
+    <a routerLink="/inscription" class="font-semibold text-brand-600 hover:text-brand-700">Inscrivez-vous</a>
+  </p>
+</section>
