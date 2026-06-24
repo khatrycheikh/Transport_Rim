@@ -9,8 +9,7 @@ interface PopularTrip {
   duration: string;
   seats: number;
   price: number;
-  imageClass: string;
-  landmark: 'monument' | 'mosque' | 'desert' | 'fort';
+  image: string;
 }
 
 interface Partner {
@@ -68,29 +67,37 @@ export class Home {
       icon: 'ticket' as const,
       title: 'Réservation facile',
       description: 'Réservez vos billets en quelques clics',
+      bgClass: 'bg-orange-100 dark:bg-orange-500/15',
+      textClass: 'text-orange-600',
     },
     {
       icon: 'seat' as const,
       title: 'Choix de sièges',
       description: 'Sélectionnez vos sièges préférés',
+      bgClass: 'bg-emerald-100 dark:bg-emerald-500/15',
+      textClass: 'text-emerald-600',
     },
     {
       icon: 'wallet' as const,
       title: 'Paiement sécurisé',
       description: 'Paiement en ligne 100% sécurisé',
+      bgClass: 'bg-blue-100 dark:bg-blue-500/15',
+      textClass: 'text-blue-600',
     },
     {
       icon: 'headset' as const,
       title: 'Support client',
       description: 'Notre équipe est disponible 24h/24 et 7j/7',
+      bgClass: 'bg-violet-100 dark:bg-violet-500/15',
+      textClass: 'text-violet-600',
     },
   ];
 
   protected readonly popularTrips: PopularTrip[] = [
-    { from: 'Nouakchott', to: 'Nouadhibou', duration: '16h 00m', seats: 45, price: 700, imageClass: 'from-sky-400 to-blue-600', landmark: 'monument' },
-    { from: 'Nouakchott', to: 'Rosso', duration: '5h 30m', seats: 23, price: 500, imageClass: 'from-amber-400 to-orange-600', landmark: 'mosque' },
-    { from: 'Nouakchott', to: 'Kiffa', duration: '8h 15m', seats: 34, price: 1000, imageClass: 'from-stone-400 to-stone-600', landmark: 'desert' },
-    { from: 'Nouakchott', to: 'Ayoun', duration: '10h 45m', seats: 28, price: 1200, imageClass: 'from-indigo-400 to-violet-600', landmark: 'fort' },
+    { from: 'Nouakchott', to: 'Nouadhibou', duration: '16h 00m', seats: 45, price: 700, image: '/images/trips/nouadhibou.jpg' },
+    { from: 'Nouakchott', to: 'Rosso', duration: '5h 30m', seats: 23, price: 500, image: '/images/trips/rosso.jpg' },
+    { from: 'Nouakchott', to: 'Atar', duration: '8h 15m', seats: 34, price: 1000, image: '/images/trips/atar.jpg' },
+    { from: 'Nouakchott', to: 'Ayoun', duration: '10h 45m', seats: 28, price: 1200, image: '/images/trips/ayoun.jpg' },
   ];
 
   protected readonly partners: Partner[] = [

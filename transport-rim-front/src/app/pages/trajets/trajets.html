@@ -22,7 +22,11 @@
   <div class="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
     @for (trip of filteredTrips(); track trip.to) {
       <div class="overflow-hidden rounded-xl border border-slate-200 transition-shadow hover:shadow-lg dark:border-slate-800">
-        <div class="h-32 bg-gradient-to-br {{ trip.imageClass }}"></div>
+        <div class="h-32 overflow-hidden bg-gradient-to-br {{ trip.imageClass }}">
+          @if (trip.image) {
+            <img [src]="trip.image" [alt]="trip.from + ' - ' + trip.to" class="h-full w-full object-cover" />
+          }
+        </div>
         <div class="p-4">
           <div class="flex items-center justify-between">
             <h3 class="font-semibold text-slate-900 dark:text-white">{{ trip.from }} → {{ trip.to }}</h3>
