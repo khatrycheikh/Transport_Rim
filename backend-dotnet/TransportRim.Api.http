@@ -1,0 +1,209 @@
+@TransportRim.Api_HostAddress = http://localhost:5073
+
+### -------------------------------------------------------------
+### ÉTAPE 1 : Inscription d'un Voyageur (Traveler)
+### -------------------------------------------------------------
+POST {{TransportRim.Api_HostAddress}}/api/auth/register
+Content-Type: application/json
+
+{
+  "name": "Cheikh El Moustapha",
+  "phoneNumber": "36220001",
+  "password": "Password123!",
+  "role": "Traveler"
+}
+
+###
+
+### -------------------------------------------------------------
+### ÉTAPE 2 : Connexion du Voyageur (Pour obtenir son Token JWT)
+### -------------------------------------------------------------
+# @name travelerLogin
+POST {{TransportRim.Api_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "phoneNumber": "36220001",
+  "password": "Password123!"
+}
+
+### Stockage automatique du token du voyageur
+@travelerToken = {{travelerLogin.response.body.token}}
+
+
+### -------------------------------------------------------------
+### ÉTAPE 3 : Inscription d'un Administrateur (Admin)
+### -------------------------------------------------------------
+POST {{TransportRim.Api_HostAddress}}/api/auth/register
+Content-Type: application/json
+
+{
+  "name": "Super Admin",
+  "phoneNumber": "36220002",
+  "password": "AdminPassword123!",
+  "role": "Admin"
+}
+
+###
+
+### -------------------------------------------------------------
+### ÉTAPE 4 : Connexion de l'Administrateur
+### -------------------------------------------------------------
+# @name adminLogin
+POST {{TransportRim.Api_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "phoneNumber": "36220002",
+  "password": "AdminPassword123!"
+}
+
+### Stockage automatique du token admin
+@adminToken = {{adminLogin.response.body.token}}
+
+
+### -------------------------------------------------------------
+### ÉTAPE 5 : Enregistrement d'une Compagnie de Transport (Public)
+### -------------------------------------------------------------
+# @name companyRegistration
+POST {{TransportRim.Api_HostAddress}}/api/companies
+Content-Type: application/json
+
+{
+  "name": "Mauritanie Transport Express",
+  "phone": "36251414",
+  "email": "contact@mte.mr",
+  "address": "Avenue Gamal Abdel Nasser, Nouakchott"
+}
+
+### Stockage de l'ID de la compagnie créée
+@companyId = {{companyRegistration.response.body.id}}
+
+
+### -------------------------------------------------------------
+### ÉTAPE 6 : Approbation de la Compagnie par l'Admin (Admin uniquement)
+### -------------------------------------------------------------
+PUT {{TransportRim.Api_HostAddress}}/api/companies/{{companyId}}/status
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "status": "Active"
+}
+
+###
+
+### -------------------------------------------------------------
+### ÉTAPE 7 : Inscription du Gestionnaire de la Compagnie (lié au CompanyId)
+### -------------------------------------------------------------
+POST {{TransportRim.Api_HostAddress}}/api/auth/register
+Content-Type: application/json
+
+{
+  "name": "Gestionnaire MTE",
+  "phoneNumber": "36220003",
+  "password": "CompanyPassword123!",
+  "role": "Company",
+  "companyId": {{companyId}}
+}
+
+###
+
+### -------------------------------------------------------------
+### ÉTAPE 8 : Connexion du Gestionnaire Compagnie (Obtention du Token)
+### -------------------------------------------------------------
+# @name companyLogin
+POST {{TransportRim.Api_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "phoneNumber": "36220003",
+  "password": "CompanyPassword123!"
+}
+
+### Stockage du token compagnie
+@companyToken = {{companyLogin.response.body.token}}
+
+
+### -------------------------------------------------------------
+### ÉTAPE 9 : Ajout d'un Bus par le Gestionnaire (Compagnie uniquement)
+### -------------------------------------------------------------
+# @name createBus
+POST {{TransportRim.Api_HostAddress}}/api/buses
+Authorization: Bearer {{companyToken}}
+Content-Type: application/json
+
+{
+  "busNumber": "1544AA06",
+  "capacity": 45
+}
+
+### Stockage de l'ID du bus créé
+@busId = {{createBus.response.body.id}}
+
+
+### -------------------------------------------------------------
+### ÉTAPE 10 : Planification d'un Trajet (Compagnie uniquement)
+### -------------------------------------------------------------
+# @name createTrip
+POST {{TransportRim.Api_HostAddress}}/api/trips
+Authorization: Bearer {{companyToken}}
+Content-Type: application/json
+
+{
+  "busId": {{busId}},
+  "departureCity": "Nouakchott",
+  "arrivalCity": "Nouadhibou",
+  "date": "2026-07-01",
+  "time": "08:00:00",
+  "price": 600.00,
+  "availableSeats": 45
+}
+
+### Stockage de l'ID du trajet créé
+@tripId = {{createTrip.response.body.id}}
+
+###
+
+### -------------------------------------------------------------
+### ÉTAPE 11 : Recherche de Trajets (Route publique)
+### -------------------------------------------------------------
+GET {{TransportRim.Api_HostAddress}}/api/trips/search?departureCity=Nouakchott&arrivalCity=Nouadhibou&date=2026-07-01
+Accept: application/json
+
+###
+
+### -------------------------------------------------------------
+### ÉTAPE 12 : Consulter tous les bus de ma Compagnie (Compagnie uniquement)
+### -------------------------------------------------------------
+GET {{TransportRim.Api_HostAddress}}/api/buses
+Authorization: Bearer {{companyToken}}
+Accept: application/json
+
+###
+
+### -------------------------------------------------------------
+### ÉTAPE 13 : Réserver des places pour un Trajet (Voyageur connecté)
+### -------------------------------------------------------------
+# @name createReservation
+POST {{TransportRim.Api_HostAddress}}/api/reservations
+Authorization: Bearer {{travelerToken}}
+Content-Type: application/json
+
+{
+  "tripId": {{tripId}},
+  "reservedSeats": 3
+}
+
+### Stockage de l'ID de la réservation créée
+@reservationId = {{createReservation.response.body.id}}
+
+###
+
+### -------------------------------------------------------------
+### ÉTAPE 14 : Consulter les détails d'une réservation (Voyageur connecté)
+### -------------------------------------------------------------
+GET {{TransportRim.Api_HostAddress}}/api/reservations/{{reservationId}}
+Authorization: Bearer {{travelerToken}}
+Accept: application/json
+
