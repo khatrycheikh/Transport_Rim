@@ -2,7 +2,7 @@
   <h1 class="text-3xl font-bold text-slate-900 dark:text-white">Tous les trajets</h1>
   <p class="mt-2 text-slate-500 dark:text-slate-400">Trouvez le trajet qui vous convient parmi nos compagnies partenaires.</p>
 
-  <div class="mt-6 flex flex-wrap gap-4">
+  <form class="mt-6 flex flex-wrap gap-4" (ngSubmit)="search()">
     <input
       type="text"
       [value]="departureFilter()"
@@ -17,44 +17,62 @@
       placeholder="Ville d'arrivée"
       class="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
     />
-  </div>
+    <input
+      type="date"
+      [value]="dateFilter()"
+      (input)="onDateInput($event)"
+      class="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+    />
+    <button
+      type="submit"
+      class="rounded-lg bg-brand-600 px-5 py-2 text-sm font-semibold text-white hover:bg-brand-700"
+    >
+      Rechercher
+    </button>
+  </form>
 
   <div class="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-    @for (trip of filteredTrips(); track trip.to) {
-      <div class="overflow-hidden rounded-xl border border-slate-200 transition-shadow hover:shadow-lg dark:border-slate-800">
-        <div class="h-32 overflow-hidden bg-gradient-to-br {{ trip.imageClass }}">
-          @if (trip.image) {
-            <img [src]="trip.image" [alt]="trip.from + ' - ' + trip.to" class="h-full w-full object-cover" />
-          }
-        </div>
-        <div class="p-4">
-          <div class="flex items-center justify-between">
-            <h3 class="font-semibold text-slate-900 dark:text-white">{{ trip.from }} → {{ trip.to }}</h3>
-            <span class="rounded-full bg-brand-50 px-2 py-0.5 text-xs font-semibold text-brand-600 dark:bg-slate-800">{{ trip.company }}</span>
-          </div>
-          <div class="mt-2 flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="h-4 w-4">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l3 3M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-            </svg>
-            {{ trip.duration }}
-          </div>
-          <div class="mt-1.5 flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="h-4 w-4">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M6 12V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v7m-6 0h10a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-1M6 12a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h1" />
-            </svg>
-            {{ trip.seats }} sièges disponibles
-          </div>
-          <div class="mt-3 flex items-center justify-between">
-            <div class="text-sm text-slate-500 dark:text-slate-400">
-              À partir de
-              <div class="text-lg font-bold text-brand-600">{{ trip.price | number }} MRU</div>
+    @if (loading()) {
+      <p class="col-span-full text-center text-slate-500 dark:text-slate-400">Chargement…</p>
+    } @else {
+      @for (trip of trips(); track trip.id) {
+        <div class="overflow-hidden rounded-xl border border-slate-200 transition-shadow hover:shadow-lg dark:border-slate-800">
+          <div class="p-4">
+            <div class="flex items-center justify-between">
+              <h3 class="font-semibold text-slate-900 dark:text-white">{{ trip.departureCity }} → {{ trip.arrivalCity }}</h3>
+              <span class="rounded-full bg-brand-50 px-2 py-0.5 text-xs font-semibold text-brand-600 dark:bg-slate-800">{{ trip.companyName }}</span>
             </div>
-            <button class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700">Réserver</button>
+            <div class="mt-2 flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="h-4 w-4">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l3 3M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+              </svg>
+              {{ trip.date | date: 'dd/MM/yyyy' }} à {{ trip.time }}
+            </div>
+            <div class="mt-1.5 flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="h-4 w-4">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 12V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v7m-6 0h10a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-1M6 12a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h1" />
+              </svg>
+              {{ trip.availableSeats }} sièges disponibles
+            </div>
+            <div class="mt-3 flex items-center justify-between">
+              <div class="text-sm text-slate-500 dark:text-slate-400">
+                À partir de
+                <div class="text-lg font-bold text-brand-600">{{ trip.price | number }} MRU</div>
+              </div>
+              <button
+                type="button"
+                [disabled]="reservingTripId() === trip.id || trip.availableSeats === 0"
+                (click)="reserve(trip)"
+                class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
+              >
+                Réserver
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-    } @empty {
-      <p class="col-span-full text-center text-slate-500 dark:text-slate-400">Aucun trajet ne correspond à votre recherche.</p>
+      } @empty {
+        <p class="col-span-full text-center text-slate-500 dark:text-slate-400">Aucun trajet ne correspond à votre recherche.</p>
+      }
     }
   </div>
 </section>

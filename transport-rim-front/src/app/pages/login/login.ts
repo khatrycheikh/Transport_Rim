@@ -1,6 +1,8 @@
-import { Component, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { AuthService } from '../../core/services/auth.service';
+import { extractApiErrorMessage } from '../../core/utils/api-error';
 
 @Component({
   selector: 'app-login',
@@ -9,10 +11,29 @@ import { RouterLink } from '@angular/router';
   styleUrl: './login.scss',
 })
 export class Login {
-  protected readonly email = signal('');
+  private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+
+  protected readonly phoneNumber = signal('');
   protected readonly password = signal('');
+  protected readonly showPassword = signal(false);
+  protected readonly loading = signal(false);
+  protected readonly error = signal('');
 
   protected submit(): void {
-    console.log('Connexion', { email: this.email(), password: this.password() });
+    this.error.set('');
+    this.loading.set(true);
+
+    this.auth.login({ phoneNumber: this.phoneNumber(), password: this.password() }).subscribe({
+      next: (user) => {
+        const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
+        this.router.navigateByUrl(returnUrl ?? (user.role === 'Admin' ? '/admin' : '/'));
+      },
+      error: (err) => {
+        this.loading.set(false);
+        this.error.set(extractApiErrorMessage(err, 'Le numéro de téléphone ou le mot de passe est incorrect.'));
+      },
+    });
   }
 }

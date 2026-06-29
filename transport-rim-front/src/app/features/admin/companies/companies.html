@@ -1,0 +1,154 @@
+<div class="flex items-center justify-between">
+  <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Gestion des compagnies</h1>
+  <button
+    type="button"
+    (click)="openCreateForm()"
+    class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700"
+  >
+    Ajouter une compagnie
+  </button>
+</div>
+
+<input
+  type="text"
+  [value]="search()"
+  (input)="onSearchInput($event)"
+  placeholder="Rechercher une compagnie…"
+  class="mt-6 w-full max-w-sm rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+/>
+
+@if (error()) {
+  <p class="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 dark:bg-red-950/40 dark:text-red-400">
+    {{ error() }}
+  </p>
+}
+
+@if (showForm()) {
+  <form class="mt-6 max-w-md space-y-4 rounded-xl border border-slate-200 p-4 dark:border-slate-800" (ngSubmit)="submitForm()">
+    <h2 class="font-semibold text-slate-900 dark:text-white">Nouvelle compagnie</h2>
+    <div>
+      <label class="mb-1.5 block text-sm font-semibold text-slate-700 dark:text-slate-200">Nom</label>
+      <input
+        type="text"
+        required
+        [(ngModel)]="formName"
+        name="name"
+        class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+      />
+    </div>
+    <div>
+      <label class="mb-1.5 block text-sm font-semibold text-slate-700 dark:text-slate-200">Téléphone</label>
+      <input
+        type="tel"
+        required
+        [(ngModel)]="formPhone"
+        name="phone"
+        class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+      />
+    </div>
+    <div>
+      <label class="mb-1.5 block text-sm font-semibold text-slate-700 dark:text-slate-200">Email</label>
+      <input
+        type="email"
+        required
+        [(ngModel)]="formEmail"
+        name="email"
+        class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+      />
+    </div>
+    <div>
+      <label class="mb-1.5 block text-sm font-semibold text-slate-700 dark:text-slate-200">Adresse</label>
+      <input
+        type="text"
+        required
+        [(ngModel)]="formAddress"
+        name="address"
+        class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+      />
+    </div>
+    <div class="flex gap-2">
+      <button
+        type="submit"
+        [disabled]="saving()"
+        class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
+      >
+        Enregistrer
+      </button>
+      <button
+        type="button"
+        (click)="cancelForm()"
+        class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-600 dark:border-slate-700 dark:text-slate-300"
+      >
+        Annuler
+      </button>
+    </div>
+  </form>
+}
+
+@if (loading()) {
+  <p class="mt-6 text-sm text-slate-500 dark:text-slate-400">Chargement…</p>
+} @else {
+  <div class="mt-6 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800">
+    <table class="w-full text-left text-sm">
+      <thead class="bg-slate-50 text-slate-500 dark:bg-slate-900 dark:text-slate-400">
+        <tr>
+          <th class="px-4 py-3">Nom</th>
+          <th class="px-4 py-3">Téléphone</th>
+          <th class="px-4 py-3">Email</th>
+          <th class="px-4 py-3">Statut</th>
+          <th class="px-4 py-3">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-200 dark:divide-slate-800">
+        @for (company of filteredCompanies(); track company.id) {
+          <tr class="bg-white dark:bg-slate-900">
+            <td class="px-4 py-3 font-medium text-slate-900 dark:text-white">{{ company.name }}</td>
+            <td class="px-4 py-3 text-slate-600 dark:text-slate-300">{{ company.phone }}</td>
+            <td class="px-4 py-3 text-slate-600 dark:text-slate-300">{{ company.email }}</td>
+            <td class="px-4 py-3">
+              <span
+                class="rounded-full px-2.5 py-0.5 text-xs font-semibold"
+                [class.bg-amber-100]="company.status === 'Pending'"
+                [class.text-amber-700]="company.status === 'Pending'"
+                [class.bg-emerald-100]="company.status === 'Active'"
+                [class.text-emerald-700]="company.status === 'Active'"
+                [class.bg-red-100]="company.status === 'Suspended'"
+                [class.text-red-700]="company.status === 'Suspended'"
+              >
+                {{ company.status }}
+              </span>
+            </td>
+            <td class="px-4 py-3">
+              <div class="flex gap-2">
+                @if (company.status !== 'Active') {
+                  <button
+                    type="button"
+                    [disabled]="updatingId() === company.id"
+                    (click)="setStatus(company, 'Active')"
+                    class="rounded-lg border border-emerald-200 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-50 disabled:opacity-60 dark:border-emerald-900 dark:hover:bg-emerald-950/40"
+                  >
+                    Approuver
+                  </button>
+                }
+                @if (company.status !== 'Suspended') {
+                  <button
+                    type="button"
+                    [disabled]="updatingId() === company.id"
+                    (click)="setStatus(company, 'Suspended')"
+                    class="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-60 dark:border-red-900 dark:hover:bg-red-950/40"
+                  >
+                    Suspendre
+                  </button>
+                }
+              </div>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="5" class="px-4 py-6 text-center text-slate-500 dark:text-slate-400">Aucune compagnie trouvée.</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}

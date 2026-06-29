@@ -1,0 +1,45 @@
+<h1 class="text-2xl font-bold text-slate-900 dark:text-white">Mes réservations</h1>
+
+@if (loading()) {
+  <p class="mt-6 text-sm text-slate-500 dark:text-slate-400">Chargement…</p>
+} @else if (reservations().length === 0) {
+  <p class="mt-6 text-sm text-slate-500 dark:text-slate-400">Vous n'avez aucune réservation pour le moment.</p>
+} @else {
+  <div class="mt-6 space-y-4">
+    @for (reservation of reservations(); track reservation.id) {
+      <div class="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+        <div>
+          <p class="font-semibold text-slate-900 dark:text-white">
+            {{ reservation.departureCity }} → {{ reservation.arrivalCity }}
+          </p>
+          <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            {{ reservation.tripDate | date: 'dd/MM/yyyy' }} · {{ reservation.reservedSeats }} place(s) ·
+            {{ reservation.totalPrice | number: '1.0-0' }} MRU
+          </p>
+          <span
+            class="mt-2 inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold"
+            [class.bg-amber-100]="reservation.status === 'Pending'"
+            [class.text-amber-700]="reservation.status === 'Pending'"
+            [class.bg-emerald-100]="reservation.status === 'Confirmed'"
+            [class.text-emerald-700]="reservation.status === 'Confirmed'"
+            [class.bg-red-100]="reservation.status === 'Cancelled'"
+            [class.text-red-700]="reservation.status === 'Cancelled'"
+          >
+            {{ reservation.status }}
+          </span>
+        </div>
+
+        @if (reservation.status !== 'Cancelled') {
+          <button
+            type="button"
+            [disabled]="cancellingId() === reservation.id"
+            (click)="cancel(reservation)"
+            class="rounded-lg border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-60 dark:border-red-900 dark:hover:bg-red-950/40"
+          >
+            Annuler
+          </button>
+        }
+      </div>
+    }
+  </div>
+}

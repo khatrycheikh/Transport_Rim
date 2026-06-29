@@ -2,32 +2,58 @@
   <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Connexion</h1>
   <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Accédez à votre compte pour gérer vos réservations.</p>
 
+  @if (error()) {
+    <p class="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 dark:bg-red-950/40 dark:text-red-400">
+      {{ error() }}
+    </p>
+  }
+
   <form class="mt-8 space-y-4" (ngSubmit)="submit()">
     <div>
-      <label class="mb-1.5 block text-sm font-semibold text-slate-700 dark:text-slate-200">Email</label>
+      <label class="mb-1.5 block text-sm font-semibold text-slate-700 dark:text-slate-200">Numéro de téléphone</label>
       <input
-        type="email"
+        type="tel"
         required
-        [(ngModel)]="email"
-        name="email"
+        [(ngModel)]="phoneNumber"
+        name="phoneNumber"
         class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-brand-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
       />
     </div>
     <div>
       <label class="mb-1.5 block text-sm font-semibold text-slate-700 dark:text-slate-200">Mot de passe</label>
-      <input
-        type="password"
-        required
-        [(ngModel)]="password"
-        name="password"
-        class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-brand-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
-      />
+      <div class="relative">
+        <input
+          [type]="showPassword() ? 'text' : 'password'"
+          required
+          [(ngModel)]="password"
+          name="password"
+          class="w-full rounded-lg border border-slate-300 px-3 py-2.5 pr-10 text-sm focus:border-brand-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+        />
+        <button
+          type="button"
+          (click)="showPassword.set(!showPassword())"
+          class="absolute inset-y-0 right-0 flex items-center px-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+          [attr.aria-label]="showPassword() ? 'Masquer le mot de passe' : 'Afficher le mot de passe'"
+        >
+          @if (showPassword()) {
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="h-4 w-4">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3 3l18 18M10.58 10.58a2 2 0 0 0 2.83 2.83M9.88 5.09A9.77 9.77 0 0 1 12 5c5 0 9 4 10 7-.32.99-.94 2.15-1.83 3.25M6.1 6.1C4.16 7.42 2.68 9.36 2 12c1 3 5 7 10 7 1.13 0 2.2-.2 3.18-.55" />
+            </svg>
+          } @else {
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="h-4 w-4">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7Z" />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
+          }
+        </button>
+      </div>
     </div>
     <button
       type="submit"
-      class="w-full rounded-lg bg-brand-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-brand-700"
+      [disabled]="loading()"
+      class="w-full rounded-lg bg-brand-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
     >
-      Se connecter
+      {{ loading() ? 'Connexion…' : 'Se connecter' }}
     </button>
   </form>
 

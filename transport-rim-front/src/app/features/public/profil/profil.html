@@ -1,0 +1,42 @@
+<h1 class="text-2xl font-bold text-slate-900 dark:text-white">Mon profil</h1>
+
+@if (success()) {
+  <p class="mt-4 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400">
+    Profil mis à jour avec succès.
+  </p>
+}
+@if (error()) {
+  <p class="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 dark:bg-red-950/40 dark:text-red-400">
+    {{ error() }}
+  </p>
+}
+
+<form class="mt-6 max-w-md space-y-4" (ngSubmit)="submit()">
+  <div>
+    <label class="mb-1.5 block text-sm font-semibold text-slate-700 dark:text-slate-200">Nom</label>
+    <input
+      type="text"
+      required
+      [(ngModel)]="name"
+      name="name"
+      class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-brand-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+    />
+  </div>
+  <div>
+    <label class="mb-1.5 block text-sm font-semibold text-slate-700 dark:text-slate-200">Téléphone</label>
+    <input
+      type="tel"
+      required
+      [(ngModel)]="phoneNumber"
+      name="phoneNumber"
+      class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-brand-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+    />
+  </div>
+  <button
+    type="submit"
+    [disabled]="saving()"
+    class="rounded-lg bg-brand-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
+  >
+    {{ saving() ? 'Enregistrement…' : 'Modifier' }}
+  </button>
+</form>
