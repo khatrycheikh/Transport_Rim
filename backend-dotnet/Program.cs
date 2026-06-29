@@ -91,6 +91,7 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ICompanyService, CompanyService>();
 builder.Services.AddScoped<IBusService, BusService>();
 builder.Services.AddScoped<ITripService, TripService>();
+builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 
 // 5. Configuration CORS pour l'application Angular (tournant sur http://localhost:4200)

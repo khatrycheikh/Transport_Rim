@@ -102,6 +102,18 @@ namespace TransportRim.Api.Services
             return MapToDto(createdTrip);
         }
 
+        public async Task<TripDto> CreateTripAsAdminAsync(CreateTripDto dto)
+        {
+            // L'Admin ne connaît pas forcément la compagnie : elle est déduite du bus choisi.
+            var bus = await _context.Buses.FirstOrDefaultAsync(b => b.Id == dto.BusId);
+            if (bus == null)
+            {
+                throw new InvalidOperationException("Le bus sélectionné n'existe pas.");
+            }
+
+            return await CreateTripAsync(dto, bus.CompanyId);
+        }
+
         public async Task<IEnumerable<TripDto>> GetTripsByCompanyIdAsync(int companyId)
         {
             var trips = await _context.Trips
@@ -111,6 +123,61 @@ namespace TransportRim.Api.Services
                 .ToListAsync();
 
             return trips.Select(t => MapToDto(t));
+        }
+
+        public async Task<IEnumerable<TripDto>> GetAllTripsAsync()
+        {
+            var trips = await _context.Trips
+                .Include(t => t.Bus)
+                .ThenInclude(b => b!.Company)
+                .ToListAsync();
+
+            return trips.Select(t => MapToDto(t));
+        }
+
+        public async Task<TripDto?> UpdateTripAsync(int id, UpdateTripDto dto, int companyId)
+        {
+            var trip = await _context.Trips
+                .Include(t => t.Bus)
+                .ThenInclude(b => b!.Company)
+                .FirstOrDefaultAsync(t => t.Id == id && t.Bus!.CompanyId == companyId);
+
+            return await ApplyUpdateAsync(trip, dto);
+        }
+
+        public async Task<TripDto?> UpdateTripAsync(int id, UpdateTripDto dto)
+        {
+            var trip = await _context.Trips
+                .Include(t => t.Bus)
+                .ThenInclude(b => b!.Company)
+                .FirstOrDefaultAsync(t => t.Id == id);
+
+            return await ApplyUpdateAsync(trip, dto);
+        }
+
+        private async Task<TripDto?> ApplyUpdateAsync(Trip? trip, UpdateTripDto dto)
+        {
+            if (trip == null)
+            {
+                return null;
+            }
+
+            var busBusy = await _context.Trips.AnyAsync(t =>
+                t.Id != trip.Id && t.BusId == trip.BusId && t.Date == dto.Date.Date && t.Time == dto.Time);
+            if (busBusy)
+            {
+                throw new InvalidOperationException("Ce bus est déjà affecté à un autre trajet à la même date et heure.");
+            }
+
+            trip.DepartureCity = dto.DepartureCity.Trim();
+            trip.ArrivalCity = dto.ArrivalCity.Trim();
+            trip.Date = dto.Date.Date;
+            trip.Time = dto.Time;
+            trip.Price = dto.Price;
+            trip.AvailableSeats = dto.AvailableSeats;
+
+            await _context.SaveChangesAsync();
+            return MapToDto(trip);
         }
 
         public async Task<bool> DeleteTripAsync(int id, int companyId)
@@ -125,9 +192,37 @@ namespace TransportRim.Api.Services
                 return false;
             }
 
+            await EnsureNoReservationsAsync(id);
+
             _context.Trips.Remove(trip);
             await _context.SaveChangesAsync();
             return true;
+        }
+
+        public async Task<bool> DeleteTripAsync(int id)
+        {
+            var trip = await _context.Trips.FirstOrDefaultAsync(t => t.Id == id);
+
+            if (trip == null)
+            {
+                return false;
+            }
+
+            await EnsureNoReservationsAsync(id);
+
+            _context.Trips.Remove(trip);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        private async Task EnsureNoReservationsAsync(int tripId)
+        {
+            var hasReservations = await _context.Reservations.AnyAsync(r => r.TripId == tripId);
+            if (hasReservations)
+            {
+                throw new InvalidOperationException(
+                    "Impossible de supprimer ce trajet : des réservations lui sont encore associées.");
+            }
         }
 
         private static TripDto MapToDto(Trip trip)

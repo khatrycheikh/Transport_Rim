@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
@@ -28,6 +29,38 @@ namespace TransportRim.Api.Controllers
         {
             _context = context;
             _notificationService = notificationService;
+        }
+
+        /// <summary>
+        /// Récupère la liste de toutes les réservations, tous voyageurs confondus. (Admin uniquement)
+        /// </summary>
+        [HttpGet]
+        [Authorize(Roles = "Admin")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(System.Collections.Generic.IEnumerable<ReservationDto>))]
+        public async Task<IActionResult> GetAll()
+        {
+            var reservations = await _context.Reservations
+                .Include(r => r.User)
+                .Include(r => r.Trip)
+                .ToListAsync();
+
+            var dtos = reservations.Select(reservation => new ReservationDto
+            {
+                Id = reservation.Id,
+                UserId = reservation.UserId,
+                UserName = reservation.User?.Name ?? string.Empty,
+                TripId = reservation.TripId,
+                DepartureCity = reservation.Trip?.DepartureCity ?? string.Empty,
+                ArrivalCity = reservation.Trip?.ArrivalCity ?? string.Empty,
+                TripDate = reservation.Trip?.Date ?? DateTime.MinValue,
+                TripPrice = reservation.Trip?.Price ?? 0,
+                ReservedSeats = reservation.ReservedSeats,
+                TotalPrice = reservation.TotalPrice,
+                Status = reservation.Status.ToString(),
+                CreatedAt = reservation.CreatedAt
+            });
+
+            return Ok(dtos);
         }
 
         /// <summary>
@@ -224,6 +257,47 @@ namespace TransportRim.Api.Controllers
                 ArrivalCity = trip.ArrivalCity,
                 TripDate = trip.Date,
                 TripPrice = trip.Price,
+                ReservedSeats = reservation.ReservedSeats,
+                TotalPrice = reservation.TotalPrice,
+                Status = reservation.Status.ToString(),
+                CreatedAt = reservation.CreatedAt
+            };
+
+            return Ok(dto);
+        }
+
+        /// <summary>
+        /// Modifie le statut d'une réservation, ex: la valider (Confirmed). (Admin uniquement)
+        /// </summary>
+        [HttpPut("{id}/status")]
+        [Authorize(Roles = "Admin")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ReservationDto))]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> UpdateStatus(int id, [FromBody] UpdateReservationStatusDto request)
+        {
+            var reservation = await _context.Reservations
+                .Include(r => r.User)
+                .Include(r => r.Trip)
+                .FirstOrDefaultAsync(r => r.Id == id);
+
+            if (reservation == null)
+            {
+                return NotFound(new { message = "La réservation demandée n'existe pas." });
+            }
+
+            reservation.Status = Enum.Parse<ReservationStatus>(request.Status);
+            await _context.SaveChangesAsync();
+
+            var dto = new ReservationDto
+            {
+                Id = reservation.Id,
+                UserId = reservation.UserId,
+                UserName = reservation.User?.Name ?? string.Empty,
+                TripId = reservation.TripId,
+                DepartureCity = reservation.Trip?.DepartureCity ?? string.Empty,
+                ArrivalCity = reservation.Trip?.ArrivalCity ?? string.Empty,
+                TripDate = reservation.Trip?.Date ?? DateTime.MinValue,
+                TripPrice = reservation.Trip?.Price ?? 0,
                 ReservedSeats = reservation.ReservedSeats,
                 TotalPrice = reservation.TotalPrice,
                 Status = reservation.Status.ToString(),

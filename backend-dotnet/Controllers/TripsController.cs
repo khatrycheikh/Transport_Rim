@@ -29,11 +29,25 @@ namespace TransportRim.Api.Controllers
         [HttpGet("search")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<TripDto>))]
         public async Task<IActionResult> Search(
-            [FromQuery] string? departureCity, 
-            [FromQuery] string? arrivalCity, 
+            [FromQuery] string? departureCity,
+            [FromQuery] string? arrivalCity,
             [FromQuery] DateTime? date)
         {
             var result = await _tripService.SearchTripsAsync(departureCity, arrivalCity, date);
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// Récupère la liste de tous les trajets, toutes compagnies confondues. (Admin uniquement)
+        /// </summary>
+        [HttpGet]
+        [Authorize(Roles = "Admin")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<TripDto>))]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        public async Task<IActionResult> GetAll()
+        {
+            var result = await _tripService.GetAllTripsAsync();
             return Ok(result);
         }
 
@@ -55,25 +69,33 @@ namespace TransportRim.Api.Controllers
         }
 
         /// <summary>
-        /// Permet à une compagnie de planifier un nouveau trajet. (Compagnie uniquement)
+        /// Planifie un nouveau trajet. (Compagnie ou Admin)
         /// </summary>
         [HttpPost]
-        [Authorize(Roles = "Company")]
+        [Authorize(Roles = "Company,Admin")]
         [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(TripDto))]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> Create([FromBody] CreateTripDto request)
         {
-            var companyId = GetUserCompanyId();
-            if (companyId == null)
-            {
-                return Forbid();
-            }
-
             try
             {
-                var result = await _tripService.CreateTripAsync(request, companyId.Value);
+                TripDto result;
+                if (User.IsInRole("Admin"))
+                {
+                    result = await _tripService.CreateTripAsAdminAsync(request);
+                }
+                else
+                {
+                    var companyId = GetUserCompanyId();
+                    if (companyId == null)
+                    {
+                        return Forbid();
+                    }
+                    result = await _tripService.CreateTripAsync(request, companyId.Value);
+                }
+
                 return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
             }
             catch (InvalidOperationException ex)
@@ -103,29 +125,87 @@ namespace TransportRim.Api.Controllers
         }
 
         /// <summary>
-        /// Supprime un trajet. (Compagnie uniquement)
+        /// Modifie un trajet existant. (Compagnie ou Admin)
+        /// </summary>
+        [HttpPut("{id}")]
+        [Authorize(Roles = "Company,Admin")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(TripDto))]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        public async Task<IActionResult> Update(int id, [FromBody] UpdateTripDto request)
+        {
+            try
+            {
+                TripDto? result;
+                if (User.IsInRole("Admin"))
+                {
+                    result = await _tripService.UpdateTripAsync(id, request);
+                }
+                else
+                {
+                    var companyId = GetUserCompanyId();
+                    if (companyId == null)
+                    {
+                        return Forbid();
+                    }
+                    result = await _tripService.UpdateTripAsync(id, request, companyId.Value);
+                }
+
+                if (result == null)
+                {
+                    return NotFound(new { message = "Le trajet demandé n'existe pas ou n'appartient pas à votre compagnie." });
+                }
+
+                return Ok(result);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Supprime un trajet. (Compagnie ou Admin)
         /// </summary>
         [HttpDelete("{id}")]
-        [Authorize(Roles = "Company")]
+        [Authorize(Roles = "Company,Admin")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> Delete(int id)
         {
-            var companyId = GetUserCompanyId();
-            if (companyId == null)
+            try
             {
-                return Forbid();
-            }
+                bool success;
+                if (User.IsInRole("Admin"))
+                {
+                    success = await _tripService.DeleteTripAsync(id);
+                }
+                else
+                {
+                    var companyId = GetUserCompanyId();
+                    if (companyId == null)
+                    {
+                        return Forbid();
+                    }
+                    success = await _tripService.DeleteTripAsync(id, companyId.Value);
+                }
 
-            var success = await _tripService.DeleteTripAsync(id, companyId.Value);
-            if (!success)
+                if (!success)
+                {
+                    return NotFound(new { message = "Le trajet demandé n'existe pas ou n'appartient pas à votre compagnie." });
+                }
+
+                return NoContent();
+            }
+            catch (InvalidOperationException ex)
             {
-                return NotFound(new { message = "Le trajet demandé n'existe pas ou n'appartient pas à votre compagnie." });
+                return BadRequest(new { message = ex.Message });
             }
-
-            return NoContent();
         }
 
         private int? GetUserCompanyId()

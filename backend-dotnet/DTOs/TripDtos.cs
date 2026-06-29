@@ -52,4 +52,33 @@ namespace TransportRim.Api.DTOs
         [Range(10, 100, ErrorMessage = "Le nombre de places doit être compris entre 10 et 100.")]
         public int AvailableSeats { get; set; }
     }
+
+    /// <summary>
+    /// DTO pour la modification d'un trajet existant. Le bus assigné n'est pas modifiable.
+    /// </summary>
+    public class UpdateTripDto
+    {
+        [Required(ErrorMessage = "La ville de départ est obligatoire.")]
+        [StringLength(50, ErrorMessage = "La ville de départ ne doit pas dépasser 50 caractères.")]
+        public string DepartureCity { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "La ville d'arrivée est obligatoire.")]
+        [StringLength(50, ErrorMessage = "La ville d'arrivée ne doit pas dépasser 50 caractères.")]
+        public string ArrivalCity { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "La date du trajet est obligatoire.")]
+        [DataType(DataType.Date)]
+        public DateTime Date { get; set; }
+
+        [Required(ErrorMessage = "L'heure du trajet est obligatoire.")]
+        public TimeSpan Time { get; set; }
+
+        [Required(ErrorMessage = "Le prix du trajet est obligatoire.")]
+        [Range(50, 10000, ErrorMessage = "Le prix doit être compris entre 50 MRU et 10 000 MRU.")]
+        public decimal Price { get; set; }
+
+        [Required(ErrorMessage = "Le nombre de places disponibles est obligatoire.")]
+        [Range(10, 100, ErrorMessage = "Le nombre de places doit être compris entre 10 et 100.")]
+        public int AvailableSeats { get; set; }
+    }
 }
