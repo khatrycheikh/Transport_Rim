@@ -3,9 +3,31 @@ import { DatePipe, DecimalPipe } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Trip } from '../../core/models/trip.model';
 import { TripService } from '../../core/services/trip.service';
-import { ReservationService } from '../../core/services/reservation.service';
 import { AuthService } from '../../core/services/auth.service';
-import { extractApiErrorMessage } from '../../core/utils/api-error';
+
+const CITY_IMAGES: Record<string, string> = {
+  akjoujt: 'akjoujt.jpg',
+  aleg: 'aleg.jpg',
+  atar: 'atar.jpg',
+  ayoun: 'ayoun.jpg',
+  kaedi: 'kaedi.jpg',
+  kiffa: 'kiffa.jpg',
+  nema: 'nema.jpg',
+  nouadhibou: 'nouadhibou.jpg',
+  rosso: 'rosso.jpg',
+  selibaby: 'selibaby.jpg',
+  tidjikja: 'tidjikja.jpg',
+  zouerat: 'zouerat.jpg',
+};
+
+const FALLBACK_TRIP_IMAGE = '/images/hero-bus.png';
+
+function normalizeCity(city: string): string {
+  return city
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '');
+}
 
 @Component({
   selector: 'app-trajets',
@@ -15,9 +37,23 @@ import { extractApiErrorMessage } from '../../core/utils/api-error';
 })
 export class Trajets {
   private readonly tripService = inject(TripService);
-  private readonly reservationService = inject(ReservationService);
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+
+  protected readonly cities = [
+    'Nouakchott',
+    'Nouadhibou',
+    'Rosso',
+    'Kiffa',
+    'Ayoun',
+    'Néma',
+    'Kaédi',
+    'Sélibaby',
+    'Atar',
+    'Tagant',
+    'Zouérat',
+    'Akjoujt',
+  ];
 
   protected readonly trips = signal<Trip[]>([]);
   protected readonly loading = signal(true);
@@ -35,11 +71,19 @@ export class Trajets {
   }
 
   protected onDepartureInput(event: Event): void {
-    this.departureFilter.set((event.target as HTMLInputElement).value);
+    this.departureFilter.set((event.target as HTMLSelectElement).value);
   }
 
   protected onArrivalInput(event: Event): void {
-    this.arrivalFilter.set((event.target as HTMLInputElement).value);
+    this.arrivalFilter.set((event.target as HTMLSelectElement).value);
+  }
+
+  /** Prefers the arrival city's photo (the destination), falling back to the departure city, then a generic image. */
+  protected tripImage(trip: Trip): string {
+    const arrival = CITY_IMAGES[normalizeCity(trip.arrivalCity)];
+    const departure = CITY_IMAGES[normalizeCity(trip.departureCity)];
+    const file = arrival ?? departure;
+    return file ? `/images/trips/${file}` : FALLBACK_TRIP_IMAGE;
   }
 
   protected onDateInput(event: Event): void {
@@ -69,22 +113,6 @@ export class Trajets {
       return;
     }
 
-    const input = prompt(`Combien de places voulez-vous réserver pour ${trip.departureCity} → ${trip.arrivalCity} ?`, '1');
-    if (!input) return;
-
-    const reservedSeats = Number(input);
-    if (!Number.isInteger(reservedSeats) || reservedSeats < 1) return;
-
-    this.reservingTripId.set(trip.id);
-    this.reservationService.create({ tripId: trip.id, reservedSeats }).subscribe({
-      next: () => {
-        this.reservingTripId.set(null);
-        this.router.navigateByUrl('/mon-compte/reservations');
-      },
-      error: (err) => {
-        this.reservingTripId.set(null);
-        alert(extractApiErrorMessage(err, 'La réservation a échoué.'));
-      },
-    });
+    this.router.navigate(['/trajets', trip.id, 'reserver']);
   }
 }

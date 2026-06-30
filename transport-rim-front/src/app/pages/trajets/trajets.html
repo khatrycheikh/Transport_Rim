@@ -3,20 +3,26 @@
   <p class="mt-2 text-slate-500 dark:text-slate-400">Trouvez le trajet qui vous convient parmi nos compagnies partenaires.</p>
 
   <form class="mt-6 flex flex-wrap gap-4" (ngSubmit)="search()">
-    <input
-      type="text"
+    <select
       [value]="departureFilter()"
-      (input)="onDepartureInput($event)"
-      placeholder="Ville de départ"
+      (change)="onDepartureInput($event)"
       class="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
-    />
-    <input
-      type="text"
+    >
+      <option value="">Ville de départ</option>
+      @for (city of cities; track city) {
+        <option [value]="city">{{ city }}</option>
+      }
+    </select>
+    <select
       [value]="arrivalFilter()"
-      (input)="onArrivalInput($event)"
-      placeholder="Ville d'arrivée"
+      (change)="onArrivalInput($event)"
       class="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
-    />
+    >
+      <option value="">Ville d'arrivée</option>
+      @for (city of cities; track city) {
+        <option [value]="city">{{ city }}</option>
+      }
+    </select>
     <input
       type="date"
       [value]="dateFilter()"
@@ -37,6 +43,9 @@
     } @else {
       @for (trip of trips(); track trip.id) {
         <div class="overflow-hidden rounded-xl border border-slate-200 transition-shadow hover:shadow-lg dark:border-slate-800">
+          <div class="h-32 overflow-hidden">
+            <img [src]="tripImage(trip)" [alt]="trip.departureCity + ' - ' + trip.arrivalCity" class="h-full w-full object-cover" />
+          </div>
           <div class="p-4">
             <div class="flex items-center justify-between">
               <h3 class="font-semibold text-slate-900 dark:text-white">{{ trip.departureCity }} → {{ trip.arrivalCity }}</h3>

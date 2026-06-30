@@ -80,41 +80,38 @@ namespace TransportRim.Api.Controllers
                 return BadRequest(new { message = "Ce numéro de transaction a déjà été enregistré dans le système." });
             }
 
-            // 5. Création du paiement (automatiquement Completed dans ce flux de simulation)
+            // 4bis. Une réservation ne peut avoir qu'un seul paiement (contrainte unique en base).
+            // Cas typique : un paiement déjà créé et encore en attente de vérification.
+            var paymentExists = await _context.Payments.AnyAsync(p => p.ReservationId == reservation.Id);
+            if (paymentExists)
+            {
+                return BadRequest(new { message = "Un paiement existe déjà pour cette réservation." });
+            }
+
+            // 5. Création du paiement. Aucune passerelle réelle n'étant connectée (Bankily, Masrivi, carte
+            // bancaire ou espèces), aucun paiement n'est auto-confirmé : il reste "Pending" jusqu'à ce qu'un
+            // administrateur vérifie la réception réelle des fonds et le valide manuellement.
             var payment = new Payment
             {
                 ReservationId = reservation.Id,
                 Amount = reservation.TotalPrice,
                 Method = request.Method,
                 TransactionId = request.TransactionId,
-                Status = "Completed",
+                Status = "Pending",
                 CreatedAt = DateTime.UtcNow
             };
 
             _context.Payments.Add(payment);
-
-            // 6. Confirmation automatique de la réservation
-            reservation.Status = ReservationStatus.Confirmed;
-
-            // 7. Génération automatique du ticket associé
-            var ticket = new Ticket
-            {
-                ReservationId = reservation.Id,
-                QrCodeData = $"TICKET-{reservation.Id}-{Guid.NewGuid().ToString("N").Substring(0, 8).ToUpper()}",
-                GeneratedAt = DateTime.UtcNow
-            };
-            _context.Tickets.Add(ticket);
-
             await _context.SaveChangesAsync();
 
-            // 8. Envoi de la notification SMS (simulée)
+            // 6. Envoi de la notification SMS (simulée)
             var travelerName = reservation.User?.Name ?? "Voyageur";
             var travelerPhone = reservation.User?.PhoneNumber ?? string.Empty;
             var departure = reservation.Trip?.DepartureCity ?? string.Empty;
             var arrival = reservation.Trip?.ArrivalCity ?? string.Empty;
             var tripDate = reservation.Trip?.Date.ToString("dd/MM/yyyy") ?? string.Empty;
 
-            var smsMessage = $"Bonjour {travelerName}, votre réservation pour le trajet {departure} -> {arrival} du {tripDate} est confirmée ! Code ticket : {ticket.QrCodeData}.";
+            var smsMessage = $"Bonjour {travelerName}, votre réservation pour le trajet {departure} -> {arrival} du {tripDate} est enregistrée. Elle sera confirmée dès vérification de votre paiement ({payment.Method}).";
             await _notificationService.SendNotificationAsync(reservation.UserId, "SMS", travelerPhone, smsMessage);
 
             var dto = new PaymentDto
@@ -332,6 +329,48 @@ namespace TransportRim.Api.Controllers
             };
 
             return Ok(dto);
+        }
+
+        /// <summary>
+        /// Annule un paiement encore en attente (ex: espèces), pour permettre au voyageur de changer de mode de paiement.
+        /// </summary>
+        [HttpDelete("{id}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized();
+            }
+
+            var payment = await _context.Payments
+                .Include(p => p.Reservation)
+                .FirstOrDefaultAsync(p => p.Id == id);
+
+            if (payment == null)
+            {
+                return NotFound(new { message = "Le paiement demandé n'existe pas." });
+            }
+
+            if (payment.Reservation?.UserId != userId && !User.IsInRole("Admin"))
+            {
+                return Forbid();
+            }
+
+            if (payment.Status != "Pending")
+            {
+                return BadRequest(new { message = "Seul un paiement en attente peut être annulé." });
+            }
+
+            _context.Payments.Remove(payment);
+            await _context.SaveChangesAsync();
+
+            return NoContent();
         }
     }
 }

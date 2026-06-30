@@ -2,6 +2,7 @@ import { DatePipe, DecimalPipe } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { Reservation } from '../../../core/models/reservation.model';
 import { ReservationService } from '../../../core/services/reservation.service';
+import { PaymentService } from '../../../core/services/payment.service';
 
 @Component({
   selector: 'app-admin-reservations',
@@ -11,6 +12,7 @@ import { ReservationService } from '../../../core/services/reservation.service';
 })
 export class Reservations {
   private readonly reservationService = inject(ReservationService);
+  private readonly paymentService = inject(PaymentService);
 
   protected readonly reservations = signal<Reservation[]>([]);
   protected readonly loading = signal(true);
@@ -26,11 +28,18 @@ export class Reservations {
     });
   }
 
-  protected validate(reservation: Reservation): void {
+  /** Confirms a payment after manual verification: completes it, which confirms the reservation and generates the ticket. */
+  protected validatePayment(reservation: Reservation): void {
+    if (!reservation.paymentId) return;
+
     this.updatingId.set(reservation.id);
-    this.reservationService.setStatus(reservation.id, 'Confirmed').subscribe({
-      next: (updated) => {
-        this.reservations.update((list) => list.map((r) => (r.id === reservation.id ? updated : r)));
+    this.paymentService.updateStatus(reservation.paymentId, 'Completed').subscribe({
+      next: () => {
+        this.reservations.update((list) =>
+          list.map((r) =>
+            r.id === reservation.id ? { ...r, status: 'Confirmed', paymentStatus: 'Completed' } : r,
+          ),
+        );
         this.updatingId.set(null);
       },
       error: () => this.updatingId.set(null),

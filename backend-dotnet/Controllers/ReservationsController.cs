@@ -42,6 +42,7 @@ namespace TransportRim.Api.Controllers
             var reservations = await _context.Reservations
                 .Include(r => r.User)
                 .Include(r => r.Trip)
+                .Include(r => r.Payment)
                 .ToListAsync();
 
             var dtos = reservations.Select(reservation => new ReservationDto
@@ -57,7 +58,11 @@ namespace TransportRim.Api.Controllers
                 ReservedSeats = reservation.ReservedSeats,
                 TotalPrice = reservation.TotalPrice,
                 Status = reservation.Status.ToString(),
-                CreatedAt = reservation.CreatedAt
+                CreatedAt = reservation.CreatedAt,
+                PaymentId = reservation.Payment?.Id,
+                PaymentMethod = reservation.Payment?.Method.ToString(),
+                PaymentStatus = reservation.Payment?.Status,
+                PaymentTransactionId = reservation.Payment?.TransactionId
             });
 
             return Ok(dtos);
@@ -82,6 +87,7 @@ namespace TransportRim.Api.Controllers
             var reservation = await _context.Reservations
                 .Include(r => r.User)
                 .Include(r => r.Trip)
+                .Include(r => r.Payment)
                 .FirstOrDefaultAsync(r => r.Id == id);
 
             if (reservation == null)
@@ -108,7 +114,11 @@ namespace TransportRim.Api.Controllers
                 ReservedSeats = reservation.ReservedSeats,
                 TotalPrice = reservation.TotalPrice,
                 Status = reservation.Status.ToString(),
-                CreatedAt = reservation.CreatedAt
+                CreatedAt = reservation.CreatedAt,
+                PaymentId = reservation.Payment?.Id,
+                PaymentMethod = reservation.Payment?.Method.ToString(),
+                PaymentStatus = reservation.Payment?.Status,
+                PaymentTransactionId = reservation.Payment?.TransactionId
             };
 
             return Ok(dto);
@@ -278,6 +288,7 @@ namespace TransportRim.Api.Controllers
             var reservation = await _context.Reservations
                 .Include(r => r.User)
                 .Include(r => r.Trip)
+                .Include(r => r.Payment)
                 .FirstOrDefaultAsync(r => r.Id == id);
 
             if (reservation == null)
@@ -301,7 +312,11 @@ namespace TransportRim.Api.Controllers
                 ReservedSeats = reservation.ReservedSeats,
                 TotalPrice = reservation.TotalPrice,
                 Status = reservation.Status.ToString(),
-                CreatedAt = reservation.CreatedAt
+                CreatedAt = reservation.CreatedAt,
+                PaymentId = reservation.Payment?.Id,
+                PaymentMethod = reservation.Payment?.Method.ToString(),
+                PaymentStatus = reservation.Payment?.Status,
+                PaymentTransactionId = reservation.Payment?.TransactionId
             };
 
             return Ok(dto);

@@ -12,7 +12,7 @@ namespace TransportRim.Api.DTOs
         public int ReservationId { get; set; }
 
         [Required(ErrorMessage = "La méthode de paiement est obligatoire.")]
-        [EnumDataType(typeof(PaymentMethod), ErrorMessage = "Méthode de paiement invalide (Bankily, Masrivi, Cash).")]
+        [EnumDataType(typeof(PaymentMethod), ErrorMessage = "Méthode de paiement invalide (Bankily, Masrivi, CarteBancaire, Cash).")]
         public PaymentMethod Method { get; set; }
 
         [Required(ErrorMessage = "Le numéro de transaction est obligatoire.")]

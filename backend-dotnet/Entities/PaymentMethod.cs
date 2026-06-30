@@ -7,6 +7,7 @@ namespace TransportRim.Api.Entities
     {
         Bankily,
         Masrivi,
+        CarteBancaire,
         Cash
     }
 }

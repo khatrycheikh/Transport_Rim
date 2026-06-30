@@ -1,0 +1,221 @@
+<section class="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-8">
+  @if (loading()) {
+    <p class="text-center text-slate-500 dark:text-slate-400">Chargement…</p>
+  } @else if (!trip()) {
+    <p class="text-center text-slate-500 dark:text-slate-400">Trajet introuvable.</p>
+  } @else {
+    <div class="mb-6 rounded-xl border border-slate-200 p-4 dark:border-slate-800">
+      <h1 class="font-semibold text-slate-900 dark:text-white">{{ trip()!.departureCity }} → {{ trip()!.arrivalCity }}</h1>
+      <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+        {{ trip()!.date | date: 'dd/MM/yyyy' }} à {{ trip()!.time }} · {{ trip()!.companyName }}
+      </p>
+    </div>
+
+    @if (error()) {
+      <p class="mb-4 rounded-lg bg-red-50 px-4 py-2 text-sm text-red-600 dark:bg-red-500/10">{{ error() }}</p>
+    }
+
+    @switch (step()) {
+      @case ('count') {
+        <div class="rounded-xl border border-slate-200 p-6 dark:border-slate-800">
+          <h2 class="font-semibold text-slate-900 dark:text-white">Combien de places ?</h2>
+          <div class="mt-4 flex items-center gap-4">
+            <button
+              type="button"
+              (click)="setSeatCount(seatCount() - 1)"
+              class="h-9 w-9 rounded-lg border border-slate-300 text-lg font-semibold dark:border-slate-700"
+            >
+              −
+            </button>
+            <span class="w-8 text-center text-lg font-semibold text-slate-900 dark:text-white">{{ seatCount() }}</span>
+            <button
+              type="button"
+              (click)="setSeatCount(seatCount() + 1)"
+              class="h-9 w-9 rounded-lg border border-slate-300 text-lg font-semibold dark:border-slate-700"
+            >
+              +
+            </button>
+            <span class="text-sm text-slate-500 dark:text-slate-400">(max {{ maxSeats() }})</span>
+          </div>
+          <button
+            type="button"
+            (click)="goToSeats()"
+            class="mt-6 rounded-lg bg-brand-600 px-5 py-2 text-sm font-semibold text-white hover:bg-brand-700"
+          >
+            Continuer
+          </button>
+        </div>
+      }
+      @case ('seats') {
+        <div class="rounded-xl border border-slate-200 p-6 dark:border-slate-800">
+          <h2 class="font-semibold text-slate-900 dark:text-white">
+            Choisissez {{ seatCount() }} siège(s) — {{ selectedSeats().length }}/{{ seatCount() }} sélectionné(s)
+          </h2>
+          <div class="mt-4 grid grid-cols-6 gap-2 sm:grid-cols-8">
+            @for (seat of seatNumbers(); track seat) {
+              <button
+                type="button"
+                (click)="toggleSeat(seat)"
+                [class.bg-brand-600]="selectedSeats().includes(seat)"
+                [class.text-white]="selectedSeats().includes(seat)"
+                [class.border-slate-300]="!selectedSeats().includes(seat)"
+                [class.dark:border-slate-700]="!selectedSeats().includes(seat)"
+                class="flex h-10 items-center justify-center rounded-lg border text-sm font-medium text-slate-700 dark:text-slate-200"
+              >
+                {{ seat }}
+              </button>
+            }
+          </div>
+          <div class="mt-6 flex gap-3">
+            <button type="button" (click)="step.set('count')" class="rounded-lg border border-slate-300 px-5 py-2 text-sm font-semibold dark:border-slate-700">
+              Retour
+            </button>
+            <button
+              type="button"
+              [disabled]="selectedSeats().length !== seatCount()"
+              (click)="goToConfirm()"
+              class="rounded-lg bg-brand-600 px-5 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
+            >
+              Continuer
+            </button>
+          </div>
+        </div>
+      }
+      @case ('confirm') {
+        <div class="rounded-xl border border-slate-200 p-6 dark:border-slate-800">
+          <h2 class="font-semibold text-slate-900 dark:text-white">Confirmer la réservation</h2>
+          <dl class="mt-4 space-y-2 text-sm">
+            <div class="flex justify-between">
+              <dt class="text-slate-500 dark:text-slate-400">Places</dt>
+              <dd class="text-slate-900 dark:text-white">{{ seatCount() }}</dd>
+            </div>
+            <div class="flex justify-between">
+              <dt class="text-slate-500 dark:text-slate-400">Sièges choisis</dt>
+              <dd class="text-slate-900 dark:text-white">{{ selectedSeats().join(', ') }}</dd>
+            </div>
+            <div class="flex justify-between">
+              <dt class="text-slate-500 dark:text-slate-400">Total</dt>
+              <dd class="text-lg font-bold text-brand-600">{{ totalPrice() | number }} MRU</dd>
+            </div>
+          </dl>
+          <div class="mt-6 flex gap-3">
+            <button type="button" (click)="step.set('seats')" class="rounded-lg border border-slate-300 px-5 py-2 text-sm font-semibold dark:border-slate-700">
+              Retour
+            </button>
+            <button
+              type="button"
+              [disabled]="creatingReservation()"
+              (click)="confirmReservation()"
+              class="rounded-lg bg-brand-600 px-5 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
+            >
+              {{ creatingReservation() ? 'Confirmation…' : 'Confirmer la réservation' }}
+            </button>
+          </div>
+        </div>
+      }
+      @case ('payment') {
+        <div class="rounded-xl border border-slate-200 p-6 dark:border-slate-800">
+          <h2 class="font-semibold text-slate-900 dark:text-white">Choisissez le mode de paiement</h2>
+          <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            Montant à régler : <span class="font-semibold text-brand-600">{{ reservation()!.totalPrice | number }} MRU</span>
+          </p>
+
+          @if (!selectedMethod()) {
+            <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              @for (m of methods; track m.value) {
+                <button
+                  type="button"
+                  [disabled]="payingMethod() !== null"
+                  (click)="selectMethod(m.value)"
+                  class="flex flex-col items-center gap-2 rounded-lg border border-slate-300 px-3 py-4 text-sm font-medium text-slate-700 hover:border-brand-500 disabled:opacity-60 dark:border-slate-700 dark:text-slate-200"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="h-6 w-6">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Zm0 3h18" />
+                  </svg>
+                  {{ payingMethod() === m.value ? 'Enregistrement…' : m.label }}
+                </button>
+              }
+            </div>
+            @if (!isResuming()) {
+              <button type="button" (click)="step.set('confirm')" class="mt-6 rounded-lg border border-slate-300 px-5 py-2 text-sm font-semibold dark:border-slate-700">
+                Retour
+              </button>
+            }
+          } @else {
+            <div class="mt-4 rounded-lg border border-slate-200 p-4 dark:border-slate-700">
+              <p class="text-sm text-slate-600 dark:text-slate-300">
+                Envoyez {{ reservation()!.totalPrice | number }} MRU via <strong>{{ selectedMethod() }}</strong>, puis indiquez ci-dessous
+                la référence de transaction reçue. Votre réservation sera confirmée après vérification par un agent.
+              </p>
+              <input
+                type="text"
+                [value]="transactionReference()"
+                (input)="transactionReference.set($any($event.target).value)"
+                placeholder="Référence de transaction"
+                class="mt-3 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+              />
+              <div class="mt-3 flex gap-3">
+                <button type="button" (click)="cancelMethodSelection()" class="rounded-lg border border-slate-300 px-5 py-2 text-sm font-semibold dark:border-slate-700">
+                  Annuler
+                </button>
+                <button
+                  type="button"
+                  [disabled]="!transactionReference().trim() || payingMethod() !== null"
+                  (click)="confirmDigitalPayment()"
+                  class="rounded-lg bg-brand-600 px-5 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
+                >
+                  {{ payingMethod() ? 'Enregistrement…' : 'Confirmer le paiement' }}
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      }
+      @case ('pending') {
+        <div class="rounded-xl border border-slate-200 p-6 text-center dark:border-slate-800">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="mx-auto h-10 w-10 text-amber-500">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l2 2m7-2a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+          </svg>
+          <h2 class="mt-3 font-semibold text-slate-900 dark:text-white">Réservation enregistrée</h2>
+          <dl class="mx-auto mt-4 max-w-xs space-y-1 text-left text-sm">
+            <div class="flex justify-between">
+              <dt class="text-slate-500 dark:text-slate-400">Statut</dt>
+              <dd class="font-medium text-amber-600">En attente de paiement</dd>
+            </div>
+            <div class="flex justify-between">
+              <dt class="text-slate-500 dark:text-slate-400">Méthode</dt>
+              <dd class="text-slate-900 dark:text-white">{{ paidMethodLabel() }}</dd>
+            </div>
+            <div class="flex justify-between">
+              <dt class="text-slate-500 dark:text-slate-400">Montant</dt>
+              <dd class="text-slate-900 dark:text-white">{{ reservation()!.totalPrice | number }} MRU</dd>
+            </div>
+          </dl>
+          <p class="mt-4 text-sm text-slate-500 dark:text-slate-400">
+            @if (paidMethod() === 'Cash') {
+              Veuillez effectuer votre paiement en espèces à l'agence ou à l'embarquement.
+            } @else {
+              Votre paiement sera vérifié par un agent. Le billet et le QR code apparaîtront ici une fois confirmé.
+            }
+          </p>
+          <div class="mt-6 flex flex-col items-center gap-3">
+            <a
+              routerLink="/mon-compte/reservations"
+              class="inline-block rounded-lg bg-brand-600 px-5 py-2 text-sm font-semibold text-white hover:bg-brand-700"
+            >
+              Voir mes réservations
+            </a>
+            <button
+              type="button"
+              [disabled]="changingMethod()"
+              (click)="changePaymentMethod()"
+              class="text-sm font-semibold text-slate-500 hover:underline disabled:opacity-60 dark:text-slate-400"
+            >
+              {{ changingMethod() ? 'Changement…' : 'Changer le mode de paiement' }}
+            </button>
+          </div>
+        </div>
+      }
+    }
+  }
+</section>

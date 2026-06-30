@@ -19,5 +19,9 @@ namespace TransportRim.Api.DTOs
         public decimal TotalPrice { get; set; }
         public string Status { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
+        public int? PaymentId { get; set; }
+        public string? PaymentMethod { get; set; }
+        public string? PaymentStatus { get; set; }
+        public string? PaymentTransactionId { get; set; }
     }
 }

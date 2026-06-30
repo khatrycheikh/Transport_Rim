@@ -1,0 +1,53 @@
+<section class="mx-auto max-w-md px-4 py-12 sm:px-6 lg:px-8">
+  @if (loading()) {
+    <p class="text-center text-slate-500 dark:text-slate-400">Chargement…</p>
+  } @else if (error()) {
+    <p class="rounded-lg bg-red-50 px-4 py-2 text-center text-sm text-red-600 dark:bg-red-500/10">{{ error() }}</p>
+  } @else if (ticket()) {
+    <div class="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800">
+      <div class="bg-brand-600 px-6 py-4 text-center text-white">
+        <h1 class="font-semibold">Billet confirmé</h1>
+        <p class="text-sm opacity-90">{{ ticket()!.departureCity }} → {{ ticket()!.arrivalCity }}</p>
+      </div>
+      <div class="p-6">
+        <dl class="space-y-2 text-sm">
+          <div class="flex justify-between">
+            <dt class="text-slate-500 dark:text-slate-400">Date</dt>
+            <dd class="text-slate-900 dark:text-white">{{ ticket()!.tripDate | date: 'dd/MM/yyyy' }}</dd>
+          </div>
+          <div class="flex justify-between">
+            <dt class="text-slate-500 dark:text-slate-400">Passager</dt>
+            <dd class="text-slate-900 dark:text-white">{{ ticket()!.passengerName }}</dd>
+          </div>
+          <div class="flex justify-between">
+            <dt class="text-slate-500 dark:text-slate-400">Places</dt>
+            <dd class="text-slate-900 dark:text-white">{{ ticket()!.reservedSeats }}</dd>
+          </div>
+          <div class="flex justify-between">
+            <dt class="text-slate-500 dark:text-slate-400">Total</dt>
+            <dd class="font-bold text-brand-600">{{ ticket()!.totalPrice | number }} MRU</dd>
+          </div>
+        </dl>
+
+        <div class="mt-6 flex justify-center">
+          @if (qrCodeImage()) {
+            <img [src]="qrCodeImage()" alt="QR Code du billet" class="h-44 w-44" />
+          }
+        </div>
+        <p class="mt-2 text-center text-xs text-slate-400">{{ ticket()!.qrCodeData }}</p>
+
+        <button
+          type="button"
+          [disabled]="downloading()"
+          (click)="downloadPdf()"
+          class="mt-6 w-full rounded-lg bg-brand-600 px-5 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
+        >
+          {{ downloading() ? 'Génération…' : 'Télécharger PDF' }}
+        </button>
+        <a routerLink="/mon-compte/reservations" class="mt-3 block text-center text-sm text-slate-500 hover:underline dark:text-slate-400">
+          Retour à mes réservations
+        </a>
+      </div>
+    </div>
+  }
+</section>

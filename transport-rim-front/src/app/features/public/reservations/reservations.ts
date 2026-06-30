@@ -1,5 +1,6 @@
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { Reservation } from '../../../core/models/reservation.model';
@@ -7,7 +8,7 @@ import { ReservationService } from '../../../core/services/reservation.service';
 
 @Component({
   selector: 'app-reservations',
-  imports: [DatePipe, DecimalPipe],
+  imports: [DatePipe, DecimalPipe, RouterLink],
   templateUrl: './reservations.html',
   styleUrl: './reservations.scss',
 })

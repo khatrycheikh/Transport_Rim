@@ -10,6 +10,8 @@ import { TravelerLayout } from './layouts/traveler-layout/traveler-layout';
 import { AdminLayout } from './layouts/admin-layout/admin-layout';
 import { Reservations } from './features/public/reservations/reservations';
 import { Profil } from './features/public/profil/profil';
+import { Booking } from './features/public/booking/booking';
+import { Ticket } from './features/public/ticket/ticket';
 import { Dashboard } from './features/admin/dashboard/dashboard';
 import { Companies } from './features/admin/companies/companies';
 import { Users } from './features/admin/users/users';
@@ -28,6 +30,8 @@ export const routes: Routes = [
   { path: 'contact', component: Contact },
   { path: 'connexion', component: Login },
   { path: 'inscription', component: Register },
+  { path: 'trajets/:id/reserver', component: Booking, canActivate: [authGuard] },
+  { path: 'billet/:reservationId', component: Ticket, canActivate: [authGuard] },
   {
     path: 'mon-compte',
     component: TravelerLayout,
