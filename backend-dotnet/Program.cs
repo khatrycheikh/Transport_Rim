@@ -57,7 +57,7 @@ builder.Services.AddSwaggerGen(options =>
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<TransportRimDbContext>(options =>
 {
-    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
+    options.UseMySql(connectionString, new MySqlServerVersion(new Version(8, 0, 31)));
 });
 
 // 3. Configuration de l'Authentification JWT
@@ -88,6 +88,7 @@ builder.Services.AddAuthentication(options =>
 // 4. Injection des Dépendances (DI) pour les Services Métier
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ICompanyService, CompanyService>();
 builder.Services.AddScoped<IBusService, BusService>();
 builder.Services.AddScoped<ITripService, TripService>();

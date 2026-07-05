@@ -13,6 +13,7 @@ namespace TransportRim.Api.Entities
         public string PhoneNumber { get; set; } = string.Empty;
         public string PasswordHash { get; set; } = string.Empty;
         public UserRole Role { get; set; } = UserRole.Traveler;
+        public bool IsDeleted { get; set; } = false;
 
         public int? CompanyId { get; set; }
         public Company? Company { get; set; }

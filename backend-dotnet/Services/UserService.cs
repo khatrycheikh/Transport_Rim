@@ -160,16 +160,8 @@ namespace TransportRim.Api.Services
                 return false;
             }
 
-            _context.Users.Remove(user);
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateException)
-            {
-                throw new InvalidOperationException("Impossible de supprimer cet utilisateur car il a des réservations actives ou d'autres liaisons de données dans le système.");
-            }
+            user.IsDeleted = true;
+            await _context.SaveChangesAsync();
 
             return true;
         }

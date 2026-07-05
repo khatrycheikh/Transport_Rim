@@ -42,6 +42,8 @@ namespace TransportRim.Api.Data
                     .WithMany()
                     .HasForeignKey(u => u.CompanyId)
                     .OnDelete(DeleteBehavior.Restrict); // Interdire la suppression d'une compagnie si elle a des utilisateurs
+
+                entity.HasQueryFilter(u => !u.IsDeleted);
             });
 
             // --- Configuration de l'entité Company ---
