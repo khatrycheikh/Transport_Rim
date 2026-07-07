@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("TransportRim.Api")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+51103cde1566acc31b25befa48b3c1dc4d750a7c")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+42e085455b8fc963de2ad425b3de97ed4b61992e")]
 [assembly: System.Reflection.AssemblyProductAttribute("TransportRim.Api")]
 [assembly: System.Reflection.AssemblyTitleAttribute("TransportRim.Api")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
