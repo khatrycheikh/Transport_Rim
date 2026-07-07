@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace TransportRim.Api.DTOs
 {
@@ -16,6 +17,7 @@ namespace TransportRim.Api.DTOs
         public DateTime TripDate { get; set; }
         public decimal TripPrice { get; set; }
         public int ReservedSeats { get; set; }
+        public List<int> SeatNumbers { get; set; } = new();
         public decimal TotalPrice { get; set; }
         public string Status { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }

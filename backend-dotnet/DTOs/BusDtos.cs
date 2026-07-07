@@ -26,12 +26,6 @@ namespace TransportRim.Api.DTOs
         [Required(ErrorMessage = "La capacité du bus est obligatoire.")]
         [Range(10, 100, ErrorMessage = "La capacité du bus doit être comprise entre 10 et 100 places.")]
         public int Capacity { get; set; }
-
-        /// <summary>
-        /// Compagnie propriétaire du bus. Obligatoire uniquement lorsque la requête est faite par un Administrateur
-        /// (pour un compte Company, la compagnie est déduite automatiquement du jeton).
-        /// </summary>
-        public int? CompanyId { get; set; }
     }
 
     /// <summary>
@@ -46,11 +40,5 @@ namespace TransportRim.Api.DTOs
         [Required(ErrorMessage = "La capacité du bus est obligatoire.")]
         [Range(10, 100, ErrorMessage = "La capacité du bus doit être comprise entre 10 et 100 places.")]
         public int Capacity { get; set; }
-
-        /// <summary>
-        /// Nouvelle compagnie propriétaire du bus. Pris en compte uniquement lorsque la requête est faite
-        /// par un Administrateur (un compte Company ne peut pas réassigner son bus à une autre compagnie).
-        /// </summary>
-        public int? CompanyId { get; set; }
     }
 }

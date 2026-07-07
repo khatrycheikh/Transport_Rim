@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace TransportRim.Api.Entities
 {
@@ -23,5 +24,8 @@ namespace TransportRim.Api.Entities
         // Relation un-à-un (Une réservation peut avoir un paiement et un ticket)
         public Payment? Payment { get; set; }
         public Ticket? Ticket { get; set; }
+
+        // Relation un-à-plusieurs (Une réservation occupe un ou plusieurs sièges précis)
+        public ICollection<ReservationSeat> Seats { get; set; } = new List<ReservationSeat>();
     }
 }

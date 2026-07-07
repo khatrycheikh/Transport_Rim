@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace TransportRim.Api.DTOs
@@ -10,8 +11,9 @@ namespace TransportRim.Api.DTOs
         [Required(ErrorMessage = "L'identifiant du trajet (TripId) est obligatoire.")]
         public int TripId { get; set; }
 
-        [Required(ErrorMessage = "Le nombre de places à réserver est obligatoire.")]
-        [Range(1, 10, ErrorMessage = "Vous devez réserver entre 1 et 10 places.")]
-        public int ReservedSeats { get; set; }
+        [Required(ErrorMessage = "Les numéros de sièges sont obligatoires.")]
+        [MinLength(1, ErrorMessage = "Vous devez sélectionner au moins un siège.")]
+        [MaxLength(10, ErrorMessage = "Vous ne pouvez pas réserver plus de 10 sièges.")]
+        public List<int> SeatNumbers { get; set; } = new();
     }
 }

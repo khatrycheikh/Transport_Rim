@@ -39,6 +39,18 @@ namespace TransportRim.Api.DTOs
         [Required(ErrorMessage = "L'adresse de la compagnie est obligatoire.")]
         [StringLength(200, ErrorMessage = "L'adresse ne doit pas dépasser 200 caractères.")]
         public string Address { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Le nom du responsable (Company Admin) est obligatoire.")]
+        [StringLength(100, MinimumLength = 2, ErrorMessage = "Le nom doit contenir entre 2 et 100 caractères.")]
+        public string AdminName { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Le numéro de téléphone du responsable est obligatoire.")]
+        [StringLength(20, ErrorMessage = "Le numéro de téléphone ne doit pas dépasser 20 caractères.")]
+        public string AdminPhoneNumber { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Le mot de passe initial du responsable est obligatoire.")]
+        [StringLength(100, MinimumLength = 6, ErrorMessage = "Le mot de passe doit contenir au moins 6 caractères.")]
+        public string AdminPassword { get; set; } = string.Empty;
     }
 
     /// <summary>

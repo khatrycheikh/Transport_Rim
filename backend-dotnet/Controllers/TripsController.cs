@@ -69,33 +69,42 @@ namespace TransportRim.Api.Controllers
         }
 
         /// <summary>
-        /// Planifie un nouveau trajet. (Compagnie ou Admin)
+        /// Récupère la carte des sièges (disponible / en attente / confirmé) d'un trajet. (Public)
+        /// </summary>
+        [HttpGet("{id}/seats")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(SeatMapDto))]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetSeats(int id)
+        {
+            var result = await _tripService.GetSeatMapAsync(id);
+            if (result == null)
+            {
+                return NotFound(new { message = "Le trajet demandé n'existe pas." });
+            }
+
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// Planifie un nouveau trajet. (Compagnie uniquement)
         /// </summary>
         [HttpPost]
-        [Authorize(Roles = "Company,Admin")]
+        [Authorize(Roles = "Company")]
         [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(TripDto))]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> Create([FromBody] CreateTripDto request)
         {
+            var companyId = GetUserCompanyId();
+            if (companyId == null)
+            {
+                return Forbid();
+            }
+
             try
             {
-                TripDto result;
-                if (User.IsInRole("Admin"))
-                {
-                    result = await _tripService.CreateTripAsAdminAsync(request);
-                }
-                else
-                {
-                    var companyId = GetUserCompanyId();
-                    if (companyId == null)
-                    {
-                        return Forbid();
-                    }
-                    result = await _tripService.CreateTripAsync(request, companyId.Value);
-                }
-
+                var result = await _tripService.CreateTripAsync(request, companyId.Value);
                 return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
             }
             catch (InvalidOperationException ex)
@@ -125,10 +134,10 @@ namespace TransportRim.Api.Controllers
         }
 
         /// <summary>
-        /// Modifie un trajet existant. (Compagnie ou Admin)
+        /// Modifie un trajet existant. (Compagnie uniquement)
         /// </summary>
         [HttpPut("{id}")]
-        [Authorize(Roles = "Company,Admin")]
+        [Authorize(Roles = "Company")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(TripDto))]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -136,23 +145,15 @@ namespace TransportRim.Api.Controllers
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateTripDto request)
         {
+            var companyId = GetUserCompanyId();
+            if (companyId == null)
+            {
+                return Forbid();
+            }
+
             try
             {
-                TripDto? result;
-                if (User.IsInRole("Admin"))
-                {
-                    result = await _tripService.UpdateTripAsync(id, request);
-                }
-                else
-                {
-                    var companyId = GetUserCompanyId();
-                    if (companyId == null)
-                    {
-                        return Forbid();
-                    }
-                    result = await _tripService.UpdateTripAsync(id, request, companyId.Value);
-                }
-
+                var result = await _tripService.UpdateTripAsync(id, request, companyId.Value);
                 if (result == null)
                 {
                     return NotFound(new { message = "Le trajet demandé n'existe pas ou n'appartient pas à votre compagnie." });
@@ -167,10 +168,10 @@ namespace TransportRim.Api.Controllers
         }
 
         /// <summary>
-        /// Supprime un trajet. (Compagnie ou Admin)
+        /// Supprime un trajet. (Compagnie uniquement)
         /// </summary>
         [HttpDelete("{id}")]
-        [Authorize(Roles = "Company,Admin")]
+        [Authorize(Roles = "Company")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -178,23 +179,15 @@ namespace TransportRim.Api.Controllers
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> Delete(int id)
         {
+            var companyId = GetUserCompanyId();
+            if (companyId == null)
+            {
+                return Forbid();
+            }
+
             try
             {
-                bool success;
-                if (User.IsInRole("Admin"))
-                {
-                    success = await _tripService.DeleteTripAsync(id);
-                }
-                else
-                {
-                    var companyId = GetUserCompanyId();
-                    if (companyId == null)
-                    {
-                        return Forbid();
-                    }
-                    success = await _tripService.DeleteTripAsync(id, companyId.Value);
-                }
-
+                var success = await _tripService.DeleteTripAsync(id, companyId.Value);
                 if (!success)
                 {
                     return NotFound(new { message = "Le trajet demandé n'existe pas ou n'appartient pas à votre compagnie." });

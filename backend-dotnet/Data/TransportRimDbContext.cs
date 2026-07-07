@@ -18,6 +18,7 @@ namespace TransportRim.Api.Data
         public DbSet<Bus> Buses => Set<Bus>();
         public DbSet<Trip> Trips => Set<Trip>();
         public DbSet<Reservation> Reservations => Set<Reservation>();
+        public DbSet<ReservationSeat> ReservationSeats => Set<ReservationSeat>();
         public DbSet<Payment> Payments => Set<Payment>();
         public DbSet<Ticket> Tickets => Set<Ticket>();
         public DbSet<Notification> Notifications => Set<Notification>();
@@ -111,6 +112,27 @@ namespace TransportRim.Api.Data
                     .WithMany(t => t.Reservations)
                     .HasForeignKey(r => r.TripId)
                     .OnDelete(DeleteBehavior.Restrict); // Ne pas supprimer un trajet réservé
+            });
+
+            // --- Configuration de l'entité ReservationSeat ---
+            modelBuilder.Entity<ReservationSeat>(entity =>
+            {
+                entity.HasKey(rs => rs.Id);
+                entity.Property(rs => rs.SeatNumber).IsRequired();
+
+                // Un siège (TripId + SeatNumber) ne peut être occupé que par une seule réservation active à la fois.
+                entity.HasIndex(rs => new { rs.TripId, rs.SeatNumber }).IsUnique();
+
+                // Relation One-To-Many (Une réservation occupe plusieurs sièges)
+                entity.HasOne(rs => rs.Reservation)
+                    .WithMany(r => r.Seats)
+                    .HasForeignKey(rs => rs.ReservationId)
+                    .OnDelete(DeleteBehavior.Cascade); // Supprimer la réservation libère ses sièges
+
+                entity.HasOne(rs => rs.Trip)
+                    .WithMany()
+                    .HasForeignKey(rs => rs.TripId)
+                    .OnDelete(DeleteBehavior.Restrict);
             });
 
             // --- Configuration de l'entité Payment ---

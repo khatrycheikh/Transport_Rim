@@ -23,15 +23,25 @@ namespace TransportRim.Api.Controllers
         }
 
         /// <summary>
-        /// Permet de soumettre une demande d'inscription pour une nouvelle compagnie.
+        /// Crée une nouvelle compagnie et provisionne automatiquement son compte Company Admin. (Admin uniquement)
         /// </summary>
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(CompanyDto))]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> Create([FromBody] CreateCompanyDto request)
         {
-            var result = await _companyService.CreateCompanyAsync(request);
-            return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
+            try
+            {
+                var result = await _companyService.CreateCompanyAsync(request);
+                return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
+            }
+            catch (System.InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
         /// <summary>
@@ -86,6 +96,34 @@ namespace TransportRim.Api.Controllers
             }
 
             return NoContent();
+        }
+
+        /// <summary>
+        /// Supprime une compagnie. Réservé à l'Administrateur.
+        /// </summary>
+        [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        public async Task<IActionResult> Delete(int id)
+        {
+            try
+            {
+                var success = await _companyService.DeleteCompanyAsync(id);
+                if (!success)
+                {
+                    return NotFound(new { message = "La compagnie demandée n'existe pas." });
+                }
+
+                return NoContent();
+            }
+            catch (System.InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
     }
 }

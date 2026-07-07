@@ -28,5 +28,10 @@ namespace TransportRim.Api.Services
         /// Met à jour le statut d'une compagnie (Admin uniquement).
         /// </summary>
         Task<bool> UpdateCompanyStatusAsync(int id, string status);
+
+        /// <summary>
+        /// Supprime une compagnie (Admin uniquement).
+        /// </summary>
+        Task<bool> DeleteCompanyAsync(int id);
     }
 }

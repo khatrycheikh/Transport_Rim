@@ -35,6 +35,13 @@ namespace TransportRim.Api.Services
 
         public async Task<CompanyDto> CreateCompanyAsync(CreateCompanyDto dto)
         {
+            var adminPhoneNormalized = dto.AdminPhoneNumber.Trim();
+            var phoneExists = await _context.Users.AnyAsync(u => u.PhoneNumber == adminPhoneNormalized);
+            if (phoneExists)
+            {
+                throw new InvalidOperationException("Ce numéro de téléphone est déjà associé à un compte.");
+            }
+
             var company = new Company
             {
                 Name = dto.Name.Trim(),
@@ -46,6 +53,19 @@ namespace TransportRim.Api.Services
             };
 
             _context.Companies.Add(company);
+            await _context.SaveChangesAsync();
+
+            // Provisionne automatiquement le compte Company Admin rattaché à cette compagnie.
+            var admin = new User
+            {
+                Name = dto.AdminName.Trim(),
+                PhoneNumber = adminPhoneNormalized,
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.AdminPassword),
+                Role = UserRole.Company,
+                CompanyId = company.Id
+            };
+
+            _context.Users.Add(admin);
             await _context.SaveChangesAsync();
 
             return MapToDto(company);
@@ -61,6 +81,28 @@ namespace TransportRim.Api.Services
 
             company.Status = status;
             await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> DeleteCompanyAsync(int id)
+        {
+            var company = await _context.Companies.FindAsync(id);
+            if (company == null)
+            {
+                return false;
+            }
+
+            _context.Companies.Remove(company);
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException)
+            {
+                throw new InvalidOperationException("Impossible de supprimer cette compagnie car elle a encore un ou plusieurs comptes Company Admin (ou d'autres données) qui y sont rattachés.");
+            }
+
             return true;
         }
 

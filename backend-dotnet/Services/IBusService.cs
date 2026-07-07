@@ -15,19 +15,9 @@ namespace TransportRim.Api.Services
         Task<IEnumerable<BusDto>> GetBusesByCompanyIdAsync(int companyId);
 
         /// <summary>
-        /// Récupère la liste de tous les bus, toutes compagnies confondues (Admin uniquement).
-        /// </summary>
-        Task<IEnumerable<BusDto>> GetAllBusesAsync();
-
-        /// <summary>
         /// Récupère un bus spécifique par son ID et son appartenance à la compagnie.
         /// </summary>
         Task<BusDto?> GetBusByIdAsync(int id, int companyId);
-
-        /// <summary>
-        /// Récupère un bus spécifique par son ID, sans condition de propriété (Admin uniquement).
-        /// </summary>
-        Task<BusDto?> GetBusByIdAsync(int id);
 
         /// <summary>
         /// Crée un nouveau bus associé à la compagnie spécifiée.
@@ -40,18 +30,8 @@ namespace TransportRim.Api.Services
         Task<BusDto?> UpdateBusAsync(int id, UpdateBusDto dto, int companyId);
 
         /// <summary>
-        /// Met à jour les informations d'un bus, sans condition de propriété (Admin uniquement).
-        /// </summary>
-        Task<BusDto?> UpdateBusAsync(int id, UpdateBusDto dto);
-
-        /// <summary>
         /// Supprime un bus sous condition de propriété.
         /// </summary>
         Task<bool> DeleteBusAsync(int id, int companyId);
-
-        /// <summary>
-        /// Supprime un bus, sans condition de propriété (Admin uniquement).
-        /// </summary>
-        Task<bool> DeleteBusAsync(int id);
     }
 }

@@ -31,26 +31,11 @@ namespace TransportRim.Api.Services
             return buses.Select(b => MapToDto(b));
         }
 
-        public async Task<IEnumerable<BusDto>> GetAllBusesAsync()
-        {
-            var buses = await _context.Buses.Include(b => b.Company).ToListAsync();
-            return buses.Select(b => MapToDto(b));
-        }
-
         public async Task<BusDto?> GetBusByIdAsync(int id, int companyId)
         {
             var bus = await _context.Buses
                 .Include(b => b.Company)
                 .FirstOrDefaultAsync(b => b.Id == id && b.CompanyId == companyId);
-
-            return bus == null ? null : MapToDto(bus);
-        }
-
-        public async Task<BusDto?> GetBusByIdAsync(int id)
-        {
-            var bus = await _context.Buses
-                .Include(b => b.Company)
-                .FirstOrDefaultAsync(b => b.Id == id);
 
             return bus == null ? null : MapToDto(bus);
         }
@@ -111,70 +96,10 @@ namespace TransportRim.Api.Services
             return MapToDto(bus);
         }
 
-        public async Task<BusDto?> UpdateBusAsync(int id, UpdateBusDto dto)
-        {
-            var bus = await _context.Buses
-                .Include(b => b.Company)
-                .FirstOrDefaultAsync(b => b.Id == id);
-
-            if (bus == null)
-            {
-                return null;
-            }
-
-            var busNumberNormalized = dto.BusNumber.Trim().ToUpperInvariant();
-
-            var exists = await _context.Buses.AnyAsync(b => b.Id != id && b.BusNumber == busNumberNormalized);
-            if (exists)
-            {
-                throw new InvalidOperationException("Un autre bus possède déjà ce numéro d'immatriculation dans le système.");
-            }
-
-            var companyChanged = dto.CompanyId.HasValue && dto.CompanyId.Value != bus.CompanyId;
-            if (companyChanged)
-            {
-                var companyExists = await _context.Companies.AnyAsync(c => c.Id == dto.CompanyId!.Value);
-                if (!companyExists)
-                {
-                    throw new InvalidOperationException("La compagnie sélectionnée n'existe pas.");
-                }
-
-                bus.CompanyId = dto.CompanyId!.Value;
-            }
-
-            bus.BusNumber = busNumberNormalized;
-            bus.Capacity = dto.Capacity;
-
-            await _context.SaveChangesAsync();
-
-            if (companyChanged)
-            {
-                await _context.Entry(bus).Reference(b => b.Company).LoadAsync();
-            }
-
-            return MapToDto(bus);
-        }
-
         public async Task<bool> DeleteBusAsync(int id, int companyId)
         {
             var bus = await _context.Buses
                 .FirstOrDefaultAsync(b => b.Id == id && b.CompanyId == companyId);
-
-            if (bus == null)
-            {
-                return false;
-            }
-
-            await EnsureNoTripsAsync(id);
-
-            _context.Buses.Remove(bus);
-            await _context.SaveChangesAsync();
-            return true;
-        }
-
-        public async Task<bool> DeleteBusAsync(int id)
-        {
-            var bus = await _context.Buses.FirstOrDefaultAsync(b => b.Id == id);
 
             if (bus == null)
             {

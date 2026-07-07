@@ -32,38 +32,36 @@ namespace TransportRim.Api.Controllers
         }
 
         /// <summary>
-        /// Récupère la liste de toutes les réservations, tous voyageurs confondus. (Admin uniquement)
+        /// Récupère la liste des réservations : toutes pour un Admin, celles de sa compagnie pour un compte Company.
         /// </summary>
         [HttpGet]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,Company")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(System.Collections.Generic.IEnumerable<ReservationDto>))]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> GetAll()
         {
-            var reservations = await _context.Reservations
+            var query = _context.Reservations
                 .Include(r => r.User)
                 .Include(r => r.Trip)
+                    .ThenInclude(t => t!.Bus)
                 .Include(r => r.Payment)
-                .ToListAsync();
+                .Include(r => r.Seats)
+                .AsQueryable();
 
-            var dtos = reservations.Select(reservation => new ReservationDto
+            if (!User.IsInRole("Admin"))
             {
-                Id = reservation.Id,
-                UserId = reservation.UserId,
-                UserName = reservation.User?.Name ?? string.Empty,
-                TripId = reservation.TripId,
-                DepartureCity = reservation.Trip?.DepartureCity ?? string.Empty,
-                ArrivalCity = reservation.Trip?.ArrivalCity ?? string.Empty,
-                TripDate = reservation.Trip?.Date ?? DateTime.MinValue,
-                TripPrice = reservation.Trip?.Price ?? 0,
-                ReservedSeats = reservation.ReservedSeats,
-                TotalPrice = reservation.TotalPrice,
-                Status = reservation.Status.ToString(),
-                CreatedAt = reservation.CreatedAt,
-                PaymentId = reservation.Payment?.Id,
-                PaymentMethod = reservation.Payment?.Method.ToString(),
-                PaymentStatus = reservation.Payment?.Status,
-                PaymentTransactionId = reservation.Payment?.TransactionId
-            });
+                var companyId = GetUserCompanyId();
+                if (companyId == null)
+                {
+                    return Forbid();
+                }
+
+                query = query.Where(r => r.Trip!.Bus!.CompanyId == companyId.Value);
+            }
+
+            var reservations = await query.ToListAsync();
+
+            var dtos = reservations.Select(r => MapToDto(r));
 
             return Ok(dtos);
         }
@@ -87,7 +85,9 @@ namespace TransportRim.Api.Controllers
             var reservation = await _context.Reservations
                 .Include(r => r.User)
                 .Include(r => r.Trip)
+                    .ThenInclude(t => t!.Bus)
                 .Include(r => r.Payment)
+                .Include(r => r.Seats)
                 .FirstOrDefaultAsync(r => r.Id == id);
 
             if (reservation == null)
@@ -96,36 +96,25 @@ namespace TransportRim.Api.Controllers
             }
 
             // Un utilisateur ne peut consulter que ses propres réservations, sauf s'il est Admin
-            if (reservation.UserId != userId && !User.IsInRole("Admin"))
+            // ou une Company dont la réservation concerne un trajet de sa compagnie.
+            bool isAuthorized = reservation.UserId == userId || User.IsInRole("Admin");
+
+            if (!isAuthorized && User.IsInRole("Company"))
+            {
+                var companyId = GetUserCompanyId();
+                isAuthorized = companyId != null && reservation.Trip?.Bus?.CompanyId == companyId.Value;
+            }
+
+            if (!isAuthorized)
             {
                 return Forbid();
             }
 
-            var dto = new ReservationDto
-            {
-                Id = reservation.Id,
-                UserId = reservation.UserId,
-                UserName = reservation.User?.Name ?? string.Empty,
-                TripId = reservation.TripId,
-                DepartureCity = reservation.Trip?.DepartureCity ?? string.Empty,
-                ArrivalCity = reservation.Trip?.ArrivalCity ?? string.Empty,
-                TripDate = reservation.Trip?.Date ?? DateTime.MinValue,
-                TripPrice = reservation.Trip?.Price ?? 0,
-                ReservedSeats = reservation.ReservedSeats,
-                TotalPrice = reservation.TotalPrice,
-                Status = reservation.Status.ToString(),
-                CreatedAt = reservation.CreatedAt,
-                PaymentId = reservation.Payment?.Id,
-                PaymentMethod = reservation.Payment?.Method.ToString(),
-                PaymentStatus = reservation.Payment?.Status,
-                PaymentTransactionId = reservation.Payment?.TransactionId
-            };
-
-            return Ok(dto);
+            return Ok(MapToDto(reservation));
         }
 
         /// <summary>
-        /// Crée une nouvelle réservation pour un trajet.
+        /// Crée une nouvelle réservation pour un trajet, pour des sièges précis.
         /// </summary>
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(ReservationDto))]
@@ -140,34 +129,55 @@ namespace TransportRim.Api.Controllers
                 return Unauthorized();
             }
 
-            // 1. Récupération du trajet
-            var trip = await _context.Trips.FirstOrDefaultAsync(t => t.Id == request.TripId);
+            // 1. Récupération du trajet et de son bus (pour connaître la capacité)
+            var trip = await _context.Trips
+                .Include(t => t.Bus)
+                .FirstOrDefaultAsync(t => t.Id == request.TripId);
             if (trip == null)
             {
                 return NotFound(new { message = "Le trajet spécifié n'existe pas." });
             }
 
+            var seatValidation = ValidateSeatNumbers(request.SeatNumbers, trip.Bus?.Capacity ?? 0);
+            if (seatValidation != null)
+            {
+                return BadRequest(new { message = seatValidation });
+            }
+
+            var seatCount = request.SeatNumbers.Count;
+
             // 2. Vérification de la disponibilité des places
-            if (trip.AvailableSeats < request.ReservedSeats)
+            if (trip.AvailableSeats < seatCount)
             {
                 return BadRequest(new { message = $"Nombre de places disponibles insuffisant. Places restantes : {trip.AvailableSeats}." });
             }
 
-            // 3. Déduction automatique des places réservées
-            trip.AvailableSeats -= request.ReservedSeats;
+            // 3. Vérification qu'aucun des sièges demandés n'est déjà occupé (Pending ou Confirmed)
+            var alreadyTaken = await _context.ReservationSeats
+                .AnyAsync(rs => rs.TripId == trip.Id && request.SeatNumbers.Contains(rs.SeatNumber));
+            if (alreadyTaken)
+            {
+                return BadRequest(new { message = "Un ou plusieurs sièges sélectionnés sont déjà réservés. Veuillez en choisir d'autres." });
+            }
 
-            // 4. Calcul du prix total
-            var totalPrice = request.ReservedSeats * trip.Price;
+            // 4. Déduction automatique des places réservées
+            trip.AvailableSeats -= seatCount;
 
-            // 5. Instanciation de la réservation
+            // 5. Calcul du prix total
+            var totalPrice = seatCount * trip.Price;
+
+            // 6. Instanciation de la réservation et de ses sièges
             var reservation = new Reservation
             {
                 UserId = userId,
                 TripId = request.TripId,
-                ReservedSeats = request.ReservedSeats,
+                ReservedSeats = seatCount,
                 TotalPrice = totalPrice,
                 Status = ReservationStatus.Pending,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                Seats = request.SeatNumbers
+                    .Select(seatNumber => new ReservationSeat { TripId = request.TripId, SeatNumber = seatNumber })
+                    .ToList()
             };
 
             _context.Reservations.Add(reservation);
@@ -176,27 +186,13 @@ namespace TransportRim.Api.Controllers
             // Charger l'utilisateur pour renvoyer le profil complet dans le DTO
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
 
-            var dto = new ReservationDto
-            {
-                Id = reservation.Id,
-                UserId = reservation.UserId,
-                UserName = user?.Name ?? string.Empty,
-                TripId = reservation.TripId,
-                DepartureCity = trip.DepartureCity,
-                ArrivalCity = trip.ArrivalCity,
-                TripDate = trip.Date,
-                TripPrice = trip.Price,
-                ReservedSeats = reservation.ReservedSeats,
-                TotalPrice = reservation.TotalPrice,
-                Status = reservation.Status.ToString(),
-                CreatedAt = reservation.CreatedAt
-            };
+            var dto = MapToDto(reservation, user, trip);
 
             return CreatedAtAction(nameof(GetById), new { id = reservation.Id }, dto);
         }
 
         /// <summary>
-        /// Modifie le nombre de places d'une réservation existante.
+        /// Modifie les sièges d'une réservation existante.
         /// </summary>
         [HttpPut("{id}")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ReservationDto))]
@@ -215,6 +211,8 @@ namespace TransportRim.Api.Controllers
             var reservation = await _context.Reservations
                 .Include(r => r.User)
                 .Include(r => r.Trip)
+                    .ThenInclude(t => t!.Bus)
+                .Include(r => r.Seats)
                 .FirstOrDefaultAsync(r => r.Id == id);
 
             if (reservation == null)
@@ -239,8 +237,24 @@ namespace TransportRim.Api.Controllers
                 return BadRequest(new { message = "Le trajet associé à cette réservation n'est pas disponible." });
             }
 
+            var seatValidation = ValidateSeatNumbers(request.SeatNumbers, trip.Bus?.Capacity ?? 0);
+            if (seatValidation != null)
+            {
+                return BadRequest(new { message = seatValidation });
+            }
+
+            var newSeatCount = request.SeatNumbers.Count;
+
+            // Vérifier que les nouveaux sièges ne sont pas occupés par une AUTRE réservation
+            var alreadyTaken = await _context.ReservationSeats
+                .AnyAsync(rs => rs.TripId == trip.Id && rs.ReservationId != id && request.SeatNumbers.Contains(rs.SeatNumber));
+            if (alreadyTaken)
+            {
+                return BadRequest(new { message = "Un ou plusieurs sièges sélectionnés sont déjà réservés. Veuillez en choisir d'autres." });
+            }
+
             // Calcul de la différence de places
-            var seatDifference = request.ReservedSeats - reservation.ReservedSeats;
+            var seatDifference = newSeatCount - reservation.ReservedSeats;
 
             // Si on augmente la réservation, on vérifie la disponibilité
             if (seatDifference > 0 && trip.AvailableSeats < seatDifference)
@@ -251,29 +265,19 @@ namespace TransportRim.Api.Controllers
             // Ajustement automatique des places disponibles du trajet
             trip.AvailableSeats -= seatDifference;
 
+            // Remplacement des sièges occupés par cette réservation
+            _context.ReservationSeats.RemoveRange(reservation.Seats);
+            reservation.Seats = request.SeatNumbers
+                .Select(seatNumber => new ReservationSeat { TripId = trip.Id, SeatNumber = seatNumber })
+                .ToList();
+
             // Mise à jour de la réservation
-            reservation.ReservedSeats = request.ReservedSeats;
-            reservation.TotalPrice = request.ReservedSeats * trip.Price;
+            reservation.ReservedSeats = newSeatCount;
+            reservation.TotalPrice = newSeatCount * trip.Price;
 
             await _context.SaveChangesAsync();
 
-            var dto = new ReservationDto
-            {
-                Id = reservation.Id,
-                UserId = reservation.UserId,
-                UserName = reservation.User?.Name ?? string.Empty,
-                TripId = reservation.TripId,
-                DepartureCity = trip.DepartureCity,
-                ArrivalCity = trip.ArrivalCity,
-                TripDate = trip.Date,
-                TripPrice = trip.Price,
-                ReservedSeats = reservation.ReservedSeats,
-                TotalPrice = reservation.TotalPrice,
-                Status = reservation.Status.ToString(),
-                CreatedAt = reservation.CreatedAt
-            };
-
-            return Ok(dto);
+            return Ok(MapToDto(reservation));
         }
 
         /// <summary>
@@ -289,6 +293,7 @@ namespace TransportRim.Api.Controllers
                 .Include(r => r.User)
                 .Include(r => r.Trip)
                 .Include(r => r.Payment)
+                .Include(r => r.Seats)
                 .FirstOrDefaultAsync(r => r.Id == id);
 
             if (reservation == null)
@@ -299,31 +304,11 @@ namespace TransportRim.Api.Controllers
             reservation.Status = Enum.Parse<ReservationStatus>(request.Status);
             await _context.SaveChangesAsync();
 
-            var dto = new ReservationDto
-            {
-                Id = reservation.Id,
-                UserId = reservation.UserId,
-                UserName = reservation.User?.Name ?? string.Empty,
-                TripId = reservation.TripId,
-                DepartureCity = reservation.Trip?.DepartureCity ?? string.Empty,
-                ArrivalCity = reservation.Trip?.ArrivalCity ?? string.Empty,
-                TripDate = reservation.Trip?.Date ?? DateTime.MinValue,
-                TripPrice = reservation.Trip?.Price ?? 0,
-                ReservedSeats = reservation.ReservedSeats,
-                TotalPrice = reservation.TotalPrice,
-                Status = reservation.Status.ToString(),
-                CreatedAt = reservation.CreatedAt,
-                PaymentId = reservation.Payment?.Id,
-                PaymentMethod = reservation.Payment?.Method.ToString(),
-                PaymentStatus = reservation.Payment?.Status,
-                PaymentTransactionId = reservation.Payment?.TransactionId
-            };
-
-            return Ok(dto);
+            return Ok(MapToDto(reservation));
         }
 
         /// <summary>
-        /// Supprime une réservation et restitue les places au trajet associé.
+        /// Supprime une réservation, libère ses sièges et restitue les places au trajet associé.
         /// </summary>
         [HttpDelete("{id}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -361,6 +346,7 @@ namespace TransportRim.Api.Controllers
                 trip.AvailableSeats += reservation.ReservedSeats;
             }
 
+            // La suppression de la réservation supprime en cascade ses ReservationSeat (siège libéré).
             _context.Reservations.Remove(reservation);
             await _context.SaveChangesAsync();
 
@@ -375,6 +361,58 @@ namespace TransportRim.Api.Controllers
             await _notificationService.SendNotificationAsync(reservation.UserId, "SMS", travelerPhone, smsMessage);
 
             return NoContent();
+        }
+
+        /// <summary>
+        /// Valide la liste de numéros de sièges demandés : pas de doublon, au moins un, tous dans la capacité du bus.
+        /// Retourne un message d'erreur, ou null si la liste est valide.
+        /// </summary>
+        private static string? ValidateSeatNumbers(System.Collections.Generic.List<int> seatNumbers, int busCapacity)
+        {
+            if (seatNumbers.Distinct().Count() != seatNumbers.Count)
+            {
+                return "La liste de sièges contient des doublons.";
+            }
+
+            if (busCapacity <= 0 || seatNumbers.Any(s => s < 1 || s > busCapacity))
+            {
+                return $"Un ou plusieurs numéros de siège sont invalides pour ce bus (capacité : {busCapacity}).";
+            }
+
+            return null;
+        }
+
+        private static ReservationDto MapToDto(Reservation reservation, User? user = null, Trip? trip = null)
+        {
+            var resolvedTrip = trip ?? reservation.Trip;
+            var resolvedUser = user ?? reservation.User;
+
+            return new ReservationDto
+            {
+                Id = reservation.Id,
+                UserId = reservation.UserId,
+                UserName = resolvedUser?.Name ?? string.Empty,
+                TripId = reservation.TripId,
+                DepartureCity = resolvedTrip?.DepartureCity ?? string.Empty,
+                ArrivalCity = resolvedTrip?.ArrivalCity ?? string.Empty,
+                TripDate = resolvedTrip?.Date ?? DateTime.MinValue,
+                TripPrice = resolvedTrip?.Price ?? 0,
+                ReservedSeats = reservation.ReservedSeats,
+                SeatNumbers = reservation.Seats.Select(s => s.SeatNumber).OrderBy(n => n).ToList(),
+                TotalPrice = reservation.TotalPrice,
+                Status = reservation.Status.ToString(),
+                CreatedAt = reservation.CreatedAt,
+                PaymentId = reservation.Payment?.Id,
+                PaymentMethod = reservation.Payment?.Method.ToString(),
+                PaymentStatus = reservation.Payment?.Status,
+                PaymentTransactionId = reservation.Payment?.TransactionId
+            };
+        }
+
+        private int? GetUserCompanyId()
+        {
+            var claim = User.FindFirst("CompanyId")?.Value;
+            return int.TryParse(claim, out var id) ? id : null;
         }
     }
 }

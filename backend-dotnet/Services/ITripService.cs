@@ -26,17 +26,12 @@ namespace TransportRim.Api.Services
         Task<TripDto> CreateTripAsync(CreateTripDto dto, int companyId);
 
         /// <summary>
-        /// Planifie un nouveau trajet pour le compte d'un Admin : la compagnie propriétaire est déduite du bus choisi.
-        /// </summary>
-        Task<TripDto> CreateTripAsAdminAsync(CreateTripDto dto);
-
-        /// <summary>
         /// Récupère la liste de tous les trajets planifiés par une compagnie spécifique.
         /// </summary>
         Task<IEnumerable<TripDto>> GetTripsByCompanyIdAsync(int companyId);
 
         /// <summary>
-        /// Récupère la liste de tous les trajets, toutes compagnies confondues (Admin uniquement).
+        /// Récupère la liste de tous les trajets, toutes compagnies confondues (Admin uniquement, lecture seule).
         /// </summary>
         Task<IEnumerable<TripDto>> GetAllTripsAsync();
 
@@ -46,18 +41,13 @@ namespace TransportRim.Api.Services
         Task<TripDto?> UpdateTripAsync(int id, UpdateTripDto dto, int companyId);
 
         /// <summary>
-        /// Met à jour un trajet, sans condition de propriété (Admin uniquement).
-        /// </summary>
-        Task<TripDto?> UpdateTripAsync(int id, UpdateTripDto dto);
-
-        /// <summary>
         /// Supprime un trajet sous condition de propriété de la compagnie.
         /// </summary>
         Task<bool> DeleteTripAsync(int id, int companyId);
 
         /// <summary>
-        /// Supprime un trajet, sans condition de propriété (Admin uniquement).
+        /// Récupère la carte des sièges (disponible / en attente / confirmé) d'un trajet.
         /// </summary>
-        Task<bool> DeleteTripAsync(int id);
+        Task<SeatMapDto?> GetSeatMapAsync(int tripId);
     }
 }

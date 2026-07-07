@@ -9,12 +9,11 @@ using TransportRim.Api.Services;
 namespace TransportRim.Api.Controllers
 {
     /// <summary>
-    /// Contrôleur gérant la flotte de bus. Accessible aux comptes "Company" (leur propre flotte)
-    /// et "Admin" (toutes compagnies confondues).
+    /// Contrôleur gérant la flotte de bus. Réservé aux comptes "Company" (gestion de leur propre flotte).
     /// </summary>
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Roles = "Company,Admin")]
+    [Authorize(Roles = "Company")]
     public class BusesController : ControllerBase
     {
         private readonly IBusService _busService;
@@ -25,7 +24,7 @@ namespace TransportRim.Api.Controllers
         }
 
         /// <summary>
-        /// Liste les bus : tous pour un Admin, ceux de la compagnie courante pour un compte Company.
+        /// Liste les bus de la compagnie courante.
         /// </summary>
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<BusDto>))]
@@ -33,11 +32,6 @@ namespace TransportRim.Api.Controllers
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> GetAll()
         {
-            if (User.IsInRole("Admin"))
-            {
-                return Ok(await _busService.GetAllBusesAsync());
-            }
-
             var companyId = GetUserCompanyId();
             if (companyId == null)
             {
@@ -58,9 +52,8 @@ namespace TransportRim.Api.Controllers
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> GetById(int id)
         {
-            var result = User.IsInRole("Admin")
-                ? await _busService.GetBusByIdAsync(id)
-                : await GetByIdForCompanyAsync(id);
+            var companyId = GetUserCompanyId();
+            var result = companyId == null ? null : await _busService.GetBusByIdAsync(id, companyId.Value);
 
             if (result == null)
             {
@@ -70,15 +63,8 @@ namespace TransportRim.Api.Controllers
             return Ok(result);
         }
 
-        private async Task<BusDto?> GetByIdForCompanyAsync(int id)
-        {
-            var companyId = GetUserCompanyId();
-            return companyId == null ? null : await _busService.GetBusByIdAsync(id, companyId.Value);
-        }
-
         /// <summary>
-        /// Ajoute un nouveau bus. Un Admin doit préciser la compagnie propriétaire (CompanyId) ;
-        /// pour un compte Company, elle est déduite automatiquement du jeton.
+        /// Ajoute un nouveau bus à la compagnie courante.
         /// </summary>
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(BusDto))]
@@ -87,28 +73,15 @@ namespace TransportRim.Api.Controllers
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> Create([FromBody] CreateBusDto request)
         {
-            int companyId;
-            if (User.IsInRole("Admin"))
+            var companyId = GetUserCompanyId();
+            if (companyId == null)
             {
-                if (request.CompanyId == null)
-                {
-                    return BadRequest(new { message = "La compagnie propriétaire (CompanyId) est obligatoire." });
-                }
-                companyId = request.CompanyId.Value;
-            }
-            else
-            {
-                var userCompanyId = GetUserCompanyId();
-                if (userCompanyId == null)
-                {
-                    return Forbid();
-                }
-                companyId = userCompanyId.Value;
+                return Forbid();
             }
 
             try
             {
-                var result = await _busService.CreateBusAsync(request, companyId);
+                var result = await _busService.CreateBusAsync(request, companyId.Value);
                 return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
             }
             catch (System.InvalidOperationException ex)
@@ -128,23 +101,15 @@ namespace TransportRim.Api.Controllers
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateBusDto request)
         {
+            var companyId = GetUserCompanyId();
+            if (companyId == null)
+            {
+                return Forbid();
+            }
+
             try
             {
-                BusDto? result;
-                if (User.IsInRole("Admin"))
-                {
-                    result = await _busService.UpdateBusAsync(id, request);
-                }
-                else
-                {
-                    var companyId = GetUserCompanyId();
-                    if (companyId == null)
-                    {
-                        return Forbid();
-                    }
-                    result = await _busService.UpdateBusAsync(id, request, companyId.Value);
-                }
-
+                var result = await _busService.UpdateBusAsync(id, request, companyId.Value);
                 if (result == null)
                 {
                     return NotFound(new { message = "Le bus demandé n'existe pas ou n'appartient pas à votre compagnie." });
@@ -169,23 +134,15 @@ namespace TransportRim.Api.Controllers
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> Delete(int id)
         {
+            var companyId = GetUserCompanyId();
+            if (companyId == null)
+            {
+                return Forbid();
+            }
+
             try
             {
-                bool success;
-                if (User.IsInRole("Admin"))
-                {
-                    success = await _busService.DeleteBusAsync(id);
-                }
-                else
-                {
-                    var companyId = GetUserCompanyId();
-                    if (companyId == null)
-                    {
-                        return Forbid();
-                    }
-                    success = await _busService.DeleteBusAsync(id, companyId.Value);
-                }
-
+                var success = await _busService.DeleteBusAsync(id, companyId.Value);
                 if (!success)
                 {
                     return NotFound(new { message = "Le bus demandé n'existe pas ou n'appartient pas à votre compagnie." });

@@ -102,18 +102,6 @@ namespace TransportRim.Api.Services
             return MapToDto(createdTrip);
         }
 
-        public async Task<TripDto> CreateTripAsAdminAsync(CreateTripDto dto)
-        {
-            // L'Admin ne connaît pas forcément la compagnie : elle est déduite du bus choisi.
-            var bus = await _context.Buses.FirstOrDefaultAsync(b => b.Id == dto.BusId);
-            if (bus == null)
-            {
-                throw new InvalidOperationException("Le bus sélectionné n'existe pas.");
-            }
-
-            return await CreateTripAsync(dto, bus.CompanyId);
-        }
-
         public async Task<IEnumerable<TripDto>> GetTripsByCompanyIdAsync(int companyId)
         {
             var trips = await _context.Trips
@@ -141,16 +129,6 @@ namespace TransportRim.Api.Services
                 .Include(t => t.Bus)
                 .ThenInclude(b => b!.Company)
                 .FirstOrDefaultAsync(t => t.Id == id && t.Bus!.CompanyId == companyId);
-
-            return await ApplyUpdateAsync(trip, dto);
-        }
-
-        public async Task<TripDto?> UpdateTripAsync(int id, UpdateTripDto dto)
-        {
-            var trip = await _context.Trips
-                .Include(t => t.Bus)
-                .ThenInclude(b => b!.Company)
-                .FirstOrDefaultAsync(t => t.Id == id);
 
             return await ApplyUpdateAsync(trip, dto);
         }
@@ -199,20 +177,32 @@ namespace TransportRim.Api.Services
             return true;
         }
 
-        public async Task<bool> DeleteTripAsync(int id)
+        public async Task<SeatMapDto?> GetSeatMapAsync(int tripId)
         {
-            var trip = await _context.Trips.FirstOrDefaultAsync(t => t.Id == id);
-
-            if (trip == null)
+            var trip = await _context.Trips.Include(t => t.Bus).FirstOrDefaultAsync(t => t.Id == tripId);
+            if (trip?.Bus == null)
             {
-                return false;
+                return null;
             }
 
-            await EnsureNoReservationsAsync(id);
+            var occupiedSeats = await _context.ReservationSeats
+                .Include(rs => rs.Reservation)
+                .Where(rs => rs.TripId == tripId)
+                .ToListAsync();
 
-            _context.Trips.Remove(trip);
-            await _context.SaveChangesAsync();
-            return true;
+            var statusBySeat = occupiedSeats.ToDictionary(
+                rs => rs.SeatNumber,
+                rs => rs.Reservation?.Status == ReservationStatus.Confirmed ? "Confirmed" : "Pending");
+
+            var seats = Enumerable.Range(1, trip.Bus.Capacity)
+                .Select(seatNumber => new SeatDto
+                {
+                    SeatNumber = seatNumber,
+                    Status = statusBySeat.TryGetValue(seatNumber, out var status) ? status : "Available"
+                })
+                .ToList();
+
+            return new SeatMapDto { Capacity = trip.Bus.Capacity, Seats = seats };
         }
 
         private async Task EnsureNoReservationsAsync(int tripId)
