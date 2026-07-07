@@ -16,7 +16,7 @@ interface Partner {
   name: string;
   subtitle: string;
   textColorClass: string;
-  icon?: 'stp' | 'diamond';
+  icon?: 'diamond';
 }
 
 type BookingType = 'simple' | 'retour' | 'reservations';
@@ -102,7 +102,7 @@ export class Home {
 
   protected readonly partners: Partner[] = [
     { name: 'SONEF', subtitle: 'SOCIÉTÉ NATIONALE DE TRANSPORT', textColorClass: 'text-emerald-600' },
-    { name: 'STP', subtitle: 'SOCIÉTÉ DE TRANSPORT PUBLIC', textColorClass: 'text-blue-700', icon: 'stp' },
+    { name: 'Nour', subtitle: 'TRANSPORT NOUR', textColorClass: 'text-blue-700' },
     { name: 'MAURITANIE VOYAGES', subtitle: '', textColorClass: 'text-slate-900 dark:text-white', icon: 'diamond' },
     { name: 'TVC', subtitle: 'TRANSPORTS ET VOYAGES', textColorClass: 'text-slate-900 dark:text-white' },
     { name: 'STM', subtitle: 'SOCIÉTÉ  TRANSPORT MODERNE', textColorClass: 'text-emerald-600' },

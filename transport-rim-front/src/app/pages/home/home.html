@@ -241,12 +241,6 @@
       @for (partner of partners; track partner.name) {
         <div class="flex h-20 flex-col items-center justify-center gap-0.5 rounded-xl bg-white px-3 text-center shadow-sm dark:bg-slate-800">
           <div class="flex items-center gap-1.5">
-            @if (partner.icon === 'stp') {
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-5 w-5">
-                <circle cx="12" cy="12" r="11" fill="#1d4ed8" />
-                <path d="M7 9c0-1.5 1.8-2.5 4-2.5s4 .7 4 2-2 1.5-4 2-4 1-4 2.5 1.8 2.5 4 2.5 4-.7 4-2" stroke="#f97316" stroke-width="1.4" fill="none" stroke-linecap="round" />
-              </svg>
-            }
             @if (partner.icon === 'diamond') {
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-5 w-5">
                 <path d="M12 2 21 12 12 22 3 12Z" fill="#f97316" />
