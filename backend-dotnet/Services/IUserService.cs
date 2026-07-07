@@ -1,34 +1,38 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using TransportRim.Api.DTOs;
+using TransportRim.Api.Entities;
 
 namespace TransportRim.Api.Services
 {
     /// <summary>
-    /// Résultat possible d'une tentative de suppression d'utilisateur.
-    /// </summary>
-    public enum DeleteUserResult
-    {
-        Success,
-        NotFound,
-        CannotDeleteSelf,
-        HasReservations
-    }
-
-    /// <summary>
-    /// Service gérant les opérations métiers pour les utilisateurs de la plateforme (Admin uniquement).
+    /// Contrat de service pour la gestion des utilisateurs.
     /// </summary>
     public interface IUserService
     {
         /// <summary>
-        /// Récupère la liste des utilisateurs, filtrée optionnellement par nom ou téléphone.
+        /// Récupère la liste de tous les utilisateurs, avec un filtre par rôle optionnel.
         /// </summary>
-        Task<IEnumerable<UserDto>> GetAllAsync(string? search);
+        Task<IEnumerable<UserDto>> GetAllUsersAsync(UserRole? roleFilter = null);
 
         /// <summary>
-        /// Supprime un utilisateur, sous réserve qu'il ne s'agisse pas de l'administrateur courant
-        /// et qu'il n'ait aucune réservation existante.
+        /// Récupère un utilisateur par son identifiant unique.
         /// </summary>
-        Task<DeleteUserResult> DeleteAsync(int id, int requestingAdminId);
+        Task<UserDto?> GetUserByIdAsync(int id);
+
+        /// <summary>
+        /// Crée un nouvel utilisateur.
+        /// </summary>
+        Task<UserDto> CreateUserAsync(CreateUserDto dto);
+
+        /// <summary>
+        /// Met à jour les informations d'un utilisateur existant.
+        /// </summary>
+        Task<UserDto?> UpdateUserAsync(int id, UpdateUserDto dto);
+
+        /// <summary>
+        /// Supprime un utilisateur de la base de données.
+        /// </summary>
+        Task<bool> DeleteUserAsync(int id);
     }
 }

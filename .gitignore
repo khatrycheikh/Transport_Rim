@@ -3,7 +3,7 @@ backend-dotnet/bin/
 backend-dotnet/obj/
 
 # Angular build/cache artifacts
-transport-rim-front/.angular/cache/
+transport-rim-front/.angular/
 transport-rim-front/dist/
 transport-rim-front/node_modules/
 
