@@ -8,6 +8,7 @@ import { Login } from './pages/login/login';
 import { Register } from './pages/register/register';
 import { TravelerLayout } from './layouts/traveler-layout/traveler-layout';
 import { AdminLayout } from './layouts/admin-layout/admin-layout';
+import { CompanyLayout } from './layouts/company-layout/company-layout';
 import { Reservations } from './features/public/reservations/reservations';
 import { Profil } from './features/public/profil/profil';
 import { Booking } from './features/public/booking/booking';
@@ -15,10 +16,12 @@ import { Ticket } from './features/public/ticket/ticket';
 import { Dashboard } from './features/admin/dashboard/dashboard';
 import { Companies } from './features/admin/companies/companies';
 import { Users } from './features/admin/users/users';
-import { Buses } from './features/admin/buses/buses';
-import { Trajets as AdminTrajets } from './features/admin/trajets/trajets';
 import { Reservations as AdminReservations } from './features/admin/reservations/reservations';
 import { Statistiques } from './features/admin/statistiques/statistiques';
+import { Dashboard as CompanyDashboard } from './features/company/dashboard/dashboard';
+import { Buses as CompanyBuses } from './features/company/buses/buses';
+import { Trajets as CompanyTrajets } from './features/company/trajets/trajets';
+import { Reservations as CompanyReservations } from './features/company/reservations/reservations';
 import { authGuard } from './core/guards/auth.guard';
 import { roleGuard } from './core/guards/role.guard';
 
@@ -51,11 +54,22 @@ export const routes: Routes = [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       { path: 'dashboard', component: Dashboard },
       { path: 'users', component: Users },
-      { path: 'bus', component: Buses },
-      { path: 'trajets', component: AdminTrajets },
       { path: 'reservations', component: AdminReservations },
       { path: 'statistiques', component: Statistiques },
       { path: 'compagnies', component: Companies },
+    ],
+  },
+  {
+    path: 'compagnie',
+    component: CompanyLayout,
+    canActivate: [authGuard, roleGuard],
+    data: { role: 'Company' },
+    children: [
+      { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+      { path: 'dashboard', component: CompanyDashboard },
+      { path: 'bus', component: CompanyBuses },
+      { path: 'trajets', component: CompanyTrajets },
+      { path: 'reservations', component: CompanyReservations },
     ],
   },
   { path: '**', redirectTo: '' },

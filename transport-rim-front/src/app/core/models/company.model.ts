@@ -15,4 +15,7 @@ export interface CreateCompanyRequest {
   phone: string;
   email: string;
   address: string;
+  adminName: string;
+  adminPhoneNumber: string;
+  adminPassword: string;
 }

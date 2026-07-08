@@ -12,6 +12,7 @@ export interface Reservation {
   tripDate: string;
   tripPrice: number;
   reservedSeats: number;
+  seatNumbers: number[];
   totalPrice: number;
   status: ReservationStatus;
   createdAt: string;
@@ -23,7 +24,7 @@ export interface Reservation {
 
 export interface CreateReservationRequest {
   tripId: number;
-  reservedSeats: number;
+  seatNumbers: number[];
 }
 
 export interface UpdateReservationStatusRequest {

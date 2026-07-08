@@ -2,6 +2,7 @@ import { Component, signal } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { MAURITANIA_CITIES } from '../../core/constants/cities';
 
 interface PopularTrip {
   from: string;
@@ -28,20 +29,7 @@ type BookingType = 'simple' | 'retour' | 'reservations';
   styleUrl: './home.scss',
 })
 export class Home {
-  protected readonly cities = [
-    'Nouakchott',
-    'Nouadhibou',
-    'Rosso',
-    'Kiffa',
-    'Ayoun',
-    'Néma',
-    'Kaédi',
-    'Sélibaby',
-    'Atar',
-    'Tagant',
-    'Zouérat',
-    'Akjoujt',
-  ];
+  protected readonly cities = MAURITANIA_CITIES;
 
   protected readonly departureCity = signal('');
   protected readonly arrivalCity = signal('');

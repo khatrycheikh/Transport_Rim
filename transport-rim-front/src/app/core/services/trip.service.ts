@@ -2,6 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { environment } from '../../../environments/environment';
 import { CreateTripRequest, Trip, TripSearchParams, UpdateTripRequest } from '../models/trip.model';
+import { SeatMap } from '../models/seat.model';
 
 @Injectable({ providedIn: 'root' })
 export class TripService {
@@ -20,8 +21,17 @@ export class TripService {
     return this.http.get<Trip>(`${environment.apiUrl}/trips/${id}`);
   }
 
+  getSeats(id: number) {
+    return this.http.get<SeatMap>(`${environment.apiUrl}/trips/${id}/seats`);
+  }
+
   getAll() {
     return this.http.get<Trip[]>(`${environment.apiUrl}/trips`);
+  }
+
+  /** Company only: list the trips planned by the current user's company. */
+  getMine() {
+    return this.http.get<Trip[]>(`${environment.apiUrl}/trips/company`);
   }
 
   create(request: CreateTripRequest) {

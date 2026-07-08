@@ -9,11 +9,9 @@ export interface Bus {
 export interface CreateBusRequest {
   busNumber: string;
   capacity: number;
-  companyId: number;
 }
 
 export interface UpdateBusRequest {
   busNumber: string;
   capacity: number;
-  companyId?: number;
 }

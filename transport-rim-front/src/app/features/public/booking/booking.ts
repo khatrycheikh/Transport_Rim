@@ -4,6 +4,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { extractApiErrorMessage } from '../../../core/utils/api-error';
 import { PaymentMethod } from '../../../core/models/payment.model';
 import { Reservation } from '../../../core/models/reservation.model';
+import { Seat, SeatMap } from '../../../core/models/seat.model';
 import { Trip } from '../../../core/models/trip.model';
 import { PaymentService } from '../../../core/services/payment.service';
 import { ReservationService } from '../../../core/services/reservation.service';
@@ -12,7 +13,6 @@ import { TripService } from '../../../core/services/trip.service';
 type Step = 'count' | 'seats' | 'confirm' | 'payment' | 'pending';
 
 const MAX_SEATS_PER_RESERVATION = 10;
-const MAX_SEAT_GRID_SIZE = 40;
 
 @Component({
   selector: 'app-booking',
@@ -35,6 +35,8 @@ export class Booking {
 
   protected readonly seatCount = signal(1);
   protected readonly selectedSeats = signal<number[]>([]);
+  protected readonly seatMap = signal<SeatMap | null>(null);
+  protected readonly loadingSeats = signal(false);
   protected readonly creatingReservation = signal(false);
   protected readonly payingMethod = signal<PaymentMethod | null>(null);
   protected readonly pendingPaymentId = signal<number | null>(null);
@@ -54,10 +56,7 @@ export class Booking {
     Math.min(this.trip()?.availableSeats ?? 1, MAX_SEATS_PER_RESERVATION),
   );
 
-  protected readonly seatNumbers = computed(() => {
-    const count = Math.min(this.trip()?.availableSeats ?? 0, MAX_SEAT_GRID_SIZE);
-    return Array.from({ length: count }, (_, i) => i + 1);
-  });
+  protected readonly seats = computed<Seat[]>(() => this.seatMap()?.seats ?? []);
 
   protected readonly totalPrice = computed(() => (this.trip()?.price ?? 0) * this.seatCount());
 
@@ -104,19 +103,36 @@ export class Booking {
   }
 
   protected goToSeats(): void {
+    const trip = this.trip();
+    if (!trip) return;
+
     this.selectedSeats.set([]);
     this.step.set('seats');
+    this.loadingSeats.set(true);
+    this.error.set('');
+    this.tripService.getSeats(trip.id).subscribe({
+      next: (seatMap) => {
+        this.seatMap.set(seatMap);
+        this.loadingSeats.set(false);
+      },
+      error: (err) => {
+        this.loadingSeats.set(false);
+        this.error.set(extractApiErrorMessage(err, 'Impossible de charger la carte des sièges.'));
+      },
+    });
   }
 
-  protected toggleSeat(seatNumber: number): void {
+  protected toggleSeat(seat: Seat): void {
+    if (seat.status !== 'Available') return;
+
     this.selectedSeats.update((seats) => {
-      if (seats.includes(seatNumber)) {
-        return seats.filter((s) => s !== seatNumber);
+      if (seats.includes(seat.seatNumber)) {
+        return seats.filter((s) => s !== seat.seatNumber);
       }
       if (seats.length >= this.seatCount()) {
         return seats;
       }
-      return [...seats, seatNumber].sort((a, b) => a - b);
+      return [...seats, seat.seatNumber].sort((a, b) => a - b);
     });
   }
 
@@ -130,7 +146,7 @@ export class Booking {
 
     this.creatingReservation.set(true);
     this.error.set('');
-    this.reservationService.create({ tripId: trip.id, reservedSeats: this.seatCount() }).subscribe({
+    this.reservationService.create({ tripId: trip.id, seatNumbers: this.selectedSeats() }).subscribe({
       next: (reservation) => {
         this.reservation.set(reservation);
         this.creatingReservation.set(false);
@@ -138,7 +154,10 @@ export class Booking {
       },
       error: (err) => {
         this.creatingReservation.set(false);
-        this.error.set(extractApiErrorMessage(err, 'La réservation a échoué.'));
+        const message = extractApiErrorMessage(err, 'La réservation a échoué.');
+        // Un autre voyageur a pu prendre le siège entre-temps : on recharge la carte et on revient au choix des sièges.
+        this.goToSeats();
+        this.error.set(message);
       },
     });
   }

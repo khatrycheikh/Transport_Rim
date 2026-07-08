@@ -1,5 +1,5 @@
 <div class="flex items-center justify-between">
-  <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Gestion des trajets</h1>
+  <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Mes trajets</h1>
   <button
     type="button"
     (click)="openCreateForm()"
@@ -29,7 +29,7 @@
           class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
         >
           @for (bus of buses(); track bus.id) {
-            <option [value]="bus.id">{{ bus.busNumber }} — {{ bus.companyName }}</option>
+            <option [value]="bus.id">{{ bus.busNumber }}</option>
           }
         </select>
       </div>
@@ -38,23 +38,31 @@
     <div class="grid grid-cols-2 gap-4">
       <div>
         <label class="mb-1.5 block text-sm font-semibold text-slate-700 dark:text-slate-200">Ville de départ</label>
-        <input
-          type="text"
+        <select
           required
           [(ngModel)]="formDepartureCity"
           name="departureCity"
           class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
-        />
+        >
+          <option value="" disabled>Sélectionner une ville</option>
+          @for (city of cities; track city) {
+            <option [value]="city">{{ city }}</option>
+          }
+        </select>
       </div>
       <div>
         <label class="mb-1.5 block text-sm font-semibold text-slate-700 dark:text-slate-200">Ville d'arrivée</label>
-        <input
-          type="text"
+        <select
           required
           [(ngModel)]="formArrivalCity"
           name="arrivalCity"
           class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
-        />
+        >
+          <option value="" disabled>Sélectionner une ville</option>
+          @for (city of cities; track city) {
+            <option [value]="city">{{ city }}</option>
+          }
+        </select>
       </div>
       <div>
         <label class="mb-1.5 block text-sm font-semibold text-slate-700 dark:text-slate-200">Date</label>
@@ -92,13 +100,22 @@
         <label class="mb-1.5 block text-sm font-semibold text-slate-700 dark:text-slate-200">Places disponibles</label>
         <input
           type="number"
-          min="10"
-          max="100"
+          min="1"
+          [max]="selectedBusCapacity() ?? 100"
           required
+          [disabled]="!editingTrip()"
           [(ngModel)]="formAvailableSeats"
           name="availableSeats"
-          class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+          class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:disabled:bg-slate-900"
         />
+        <!-- @if (selectedBusCapacity(); as capacity) {
+          <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+            Capacité du bus sélectionné : {{ capacity }} places
+            @if (!editingTrip()) {
+              (rempli automatiquement)
+            }
+          </p>
+        } -->
       </div>
     </div>
 
@@ -130,7 +147,6 @@
         <tr>
           <th class="px-4 py-3">Trajet</th>
           <th class="px-4 py-3">Date</th>
-          <th class="px-4 py-3">Compagnie</th>
           <th class="px-4 py-3">Prix</th>
           <th class="px-4 py-3">Places</th>
           <th class="px-4 py-3">Actions</th>
@@ -141,7 +157,6 @@
           <tr class="bg-white dark:bg-slate-900">
             <td class="px-4 py-3 font-medium text-slate-900 dark:text-white">{{ trip.departureCity }} → {{ trip.arrivalCity }}</td>
             <td class="px-4 py-3 text-slate-600 dark:text-slate-300">{{ trip.date | date: 'dd/MM/yyyy' }} {{ trip.time }}</td>
-            <td class="px-4 py-3 text-slate-600 dark:text-slate-300">{{ trip.companyName }}</td>
             <td class="px-4 py-3 text-slate-600 dark:text-slate-300">{{ trip.price | number }} MRU</td>
             <td class="px-4 py-3 text-slate-600 dark:text-slate-300">{{ trip.availableSeats }}</td>
             <td class="px-4 py-3">
@@ -166,7 +181,7 @@
           </tr>
         } @empty {
           <tr>
-            <td colspan="6" class="px-4 py-6 text-center text-slate-500 dark:text-slate-400">Aucun trajet trouvé.</td>
+            <td colspan="5" class="px-4 py-6 text-center text-slate-500 dark:text-slate-400">Aucun trajet trouvé.</td>
           </tr>
         }
       </tbody>

@@ -3,21 +3,20 @@ import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/rou
 import { AuthService } from '../../core/services/auth.service';
 
 @Component({
-  selector: 'app-admin-layout',
+  selector: 'app-company-layout',
   imports: [RouterLink, RouterLinkActive, RouterOutlet],
-  templateUrl: './admin-layout.html',
-  styleUrl: './admin-layout.scss',
+  templateUrl: './company-layout.html',
+  styleUrl: './company-layout.scss',
 })
-export class AdminLayout {
+export class CompanyLayout {
   protected readonly auth = inject(AuthService);
   private readonly router = inject(Router);
 
   protected readonly navLinks = [
-    { label: 'Dashboard', path: '/admin/dashboard' },
-    { label: 'Users', path: '/admin/users' },
-    { label: 'Réservations', path: '/admin/reservations' },
-    { label: 'Statistiques', path: '/admin/statistiques' },
-    { label: 'Compagnies', path: '/admin/compagnies' },
+    { label: 'Dashboard', path: '/compagnie/dashboard' },
+    { label: 'Bus', path: '/compagnie/bus' },
+    { label: 'Trajets', path: '/compagnie/trajets' },
+    { label: 'Réservations', path: '/compagnie/reservations' },
   ];
 
   protected logout(): void {

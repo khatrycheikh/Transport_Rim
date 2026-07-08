@@ -4,6 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { Trip } from '../../core/models/trip.model';
 import { TripService } from '../../core/services/trip.service';
 import { AuthService } from '../../core/services/auth.service';
+import { MAURITANIA_CITIES } from '../../core/constants/cities';
 
 const CITY_IMAGES: Record<string, string> = {
   akjoujt: 'akjoujt.jpg',
@@ -40,20 +41,7 @@ export class Trajets {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
 
-  protected readonly cities = [
-    'Nouakchott',
-    'Nouadhibou',
-    'Rosso',
-    'Kiffa',
-    'Ayoun',
-    'Néma',
-    'Kaédi',
-    'Sélibaby',
-    'Atar',
-    'Tagant',
-    'Zouérat',
-    'Akjoujt',
-  ];
+  protected readonly cities = MAURITANIA_CITIES;
 
   protected readonly trips = signal<Trip[]>([]);
   protected readonly loading = signal(true);

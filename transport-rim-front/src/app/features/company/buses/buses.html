@@ -1,5 +1,5 @@
 <div class="flex items-center justify-between">
-  <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Gestion des bus</h1>
+  <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Mes bus</h1>
   <button
     type="button"
     (click)="openCreateForm()"
@@ -40,19 +40,6 @@
         class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
       />
     </div>
-    <div>
-      <label class="mb-1.5 block text-sm font-semibold text-slate-700 dark:text-slate-200">Compagnie</label>
-      <select
-        required
-        [(ngModel)]="formCompanyId"
-        name="companyId"
-        class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
-      >
-        @for (company of companies(); track company.id) {
-          <option [value]="company.id">{{ company.name }}</option>
-        }
-      </select>
-    </div>
     <div class="flex gap-2">
       <button
         type="submit"
@@ -81,7 +68,6 @@
         <tr>
           <th class="px-4 py-3">Immatriculation</th>
           <th class="px-4 py-3">Capacité</th>
-          <th class="px-4 py-3">Compagnie</th>
           <th class="px-4 py-3">Actions</th>
         </tr>
       </thead>
@@ -90,7 +76,6 @@
           <tr class="bg-white dark:bg-slate-900">
             <td class="px-4 py-3 font-medium text-slate-900 dark:text-white">{{ bus.busNumber }}</td>
             <td class="px-4 py-3 text-slate-600 dark:text-slate-300">{{ bus.capacity }}</td>
-            <td class="px-4 py-3 text-slate-600 dark:text-slate-300">{{ bus.companyName }}</td>
             <td class="px-4 py-3">
               <div class="flex gap-2">
                 <button
@@ -113,7 +98,7 @@
           </tr>
         } @empty {
           <tr>
-            <td colspan="4" class="px-4 py-6 text-center text-slate-500 dark:text-slate-400">Aucun bus trouvé.</td>
+            <td colspan="3" class="px-4 py-6 text-center text-slate-500 dark:text-slate-400">Aucun bus trouvé.</td>
           </tr>
         }
       </tbody>

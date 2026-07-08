@@ -13,7 +13,7 @@
             {{ reservation.departureCity }} → {{ reservation.arrivalCity }}
           </p>
           <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            {{ reservation.tripDate | date: 'dd/MM/yyyy' }} · {{ reservation.reservedSeats }} place(s) ·
+            {{ reservation.tripDate | date: 'dd/MM/yyyy' }} · Sièges {{ reservation.seatNumbers.join(', ') }} ·
             {{ reservation.totalPrice | number: '1.0-0' }} MRU
           </p>
           <span

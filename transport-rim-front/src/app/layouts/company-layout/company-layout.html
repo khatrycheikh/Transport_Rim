@@ -1,0 +1,35 @@
+<div class="flex min-h-screen bg-slate-50 dark:bg-slate-950">
+  <aside class="flex w-64 flex-col border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+    <div class="px-6 py-5">
+      <a routerLink="/" class="text-lg font-bold text-brand-600">Transport Rim</a>
+      <p class="text-xs text-slate-500 dark:text-slate-400">Espace Compagnie</p>
+    </div>
+
+    <nav class="flex-1 space-y-1 px-3">
+      @for (link of navLinks; track link.path) {
+        <a
+          [routerLink]="link.path"
+          routerLinkActive="bg-brand-50 text-brand-600 dark:bg-slate-800"
+          class="block rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+        >
+          {{ link.label }}
+        </a>
+      }
+    </nav>
+
+    <div class="border-t border-slate-200 px-3 py-4 dark:border-slate-800">
+      <p class="px-3 pb-2 text-sm text-slate-500 dark:text-slate-400">{{ auth.currentUser()?.name }}</p>
+      <button
+        type="button"
+        (click)="logout()"
+        class="block w-full rounded-lg px-3 py-2 text-left text-sm font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40"
+      >
+        Déconnexion
+      </button>
+    </div>
+  </aside>
+
+  <main class="flex-1 px-6 py-8">
+    <router-outlet />
+  </main>
+</div>

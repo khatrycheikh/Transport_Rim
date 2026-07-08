@@ -22,4 +22,8 @@ export class CompanyService {
   updateStatus(id: number, status: CompanyStatus) {
     return this.http.put<void>(`${environment.apiUrl}/companies/${id}/status`, { status });
   }
+
+  delete(id: number) {
+    return this.http.delete<void>(`${environment.apiUrl}/companies/${id}`);
+  }
 }

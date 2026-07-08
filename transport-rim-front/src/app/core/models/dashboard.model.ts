@@ -1,4 +1,5 @@
 import { Company } from './company.model';
+import { Reservation } from './reservation.model';
 
 export interface Payment {
   id: number;
@@ -8,6 +9,18 @@ export interface Payment {
   transactionId: string;
   status: string;
   createdAt: string;
+}
+
+export interface CompanyDashboard {
+  totalBuses: number;
+  totalTrips: number;
+  totalReservations: number;
+  confirmedReservationsCount: number;
+  totalSeatsBooked: number;
+  totalRevenue: number;
+  averageBusOccupancy: number;
+  recentReservations: Reservation[];
+  recentPayments: Payment[];
 }
 
 export interface AdminDashboard {

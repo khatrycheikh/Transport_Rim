@@ -1,24 +1,19 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { forkJoin } from 'rxjs';
 import { Bus } from '../../../core/models/bus.model';
-import { Company } from '../../../core/models/company.model';
 import { BusService } from '../../../core/services/bus.service';
-import { CompanyService } from '../../../core/services/company.service';
 import { extractApiErrorMessage } from '../../../core/utils/api-error';
 
 @Component({
-  selector: 'app-admin-buses',
+  selector: 'app-company-buses',
   imports: [FormsModule],
   templateUrl: './buses.html',
   styleUrl: './buses.scss',
 })
 export class Buses {
   private readonly busService = inject(BusService);
-  private readonly companyService = inject(CompanyService);
 
   protected readonly buses = signal<Bus[]>([]);
-  protected readonly companies = signal<Company[]>([]);
   protected readonly loading = signal(true);
   protected readonly error = signal('');
   protected readonly savingId = signal<number | 'new' | null>(null);
@@ -27,13 +22,11 @@ export class Buses {
   protected readonly editingBus = signal<Bus | null>(null);
   protected readonly formBusNumber = signal('');
   protected readonly formCapacity = signal(50);
-  protected readonly formCompanyId = signal<number | null>(null);
 
   constructor() {
-    forkJoin({ buses: this.busService.getAll(), companies: this.companyService.getAll() }).subscribe({
-      next: ({ buses, companies }) => {
+    this.busService.getAll().subscribe({
+      next: (buses) => {
         this.buses.set(buses);
-        this.companies.set(companies);
         this.loading.set(false);
       },
       error: () => this.loading.set(false),
@@ -44,7 +37,6 @@ export class Buses {
     this.editingBus.set(null);
     this.formBusNumber.set('');
     this.formCapacity.set(50);
-    this.formCompanyId.set(this.companies()[0]?.id ?? null);
     this.showForm.set(true);
   }
 
@@ -52,7 +44,6 @@ export class Buses {
     this.editingBus.set(bus);
     this.formBusNumber.set(bus.busNumber);
     this.formCapacity.set(bus.capacity);
-    this.formCompanyId.set(bus.companyId);
     this.showForm.set(true);
   }
 
@@ -63,16 +54,11 @@ export class Buses {
   protected submitForm(): void {
     this.error.set('');
     const editing = this.editingBus();
+    const payload = { busNumber: this.formBusNumber(), capacity: this.formCapacity() };
 
     if (editing) {
-      const companyId = this.formCompanyId();
-      if (!companyId) {
-        this.error.set('Veuillez sélectionner une compagnie.');
-        return;
-      }
-
       this.savingId.set(editing.id);
-      this.busService.update(editing.id, { busNumber: this.formBusNumber(), capacity: this.formCapacity(), companyId }).subscribe({
+      this.busService.update(editing.id, payload).subscribe({
         next: (updated) => {
           this.buses.update((list) => list.map((b) => (b.id === editing.id ? updated : b)));
           this.savingId.set(null);
@@ -80,20 +66,14 @@ export class Buses {
         },
         error: (err) => {
           this.savingId.set(null);
-          this.error.set(extractApiErrorMessage(err, "La modification a échoué."));
+          this.error.set(extractApiErrorMessage(err, 'La modification a échoué.'));
         },
       });
       return;
     }
 
-    const companyId = this.formCompanyId();
-    if (!companyId) {
-      this.error.set('Veuillez sélectionner une compagnie.');
-      return;
-    }
-
     this.savingId.set('new');
-    this.busService.create({ busNumber: this.formBusNumber(), capacity: this.formCapacity(), companyId }).subscribe({
+    this.busService.create(payload).subscribe({
       next: (created) => {
         this.buses.update((list) => [...list, created]);
         this.savingId.set(null);
@@ -101,7 +81,7 @@ export class Buses {
       },
       error: (err) => {
         this.savingId.set(null);
-        this.error.set(extractApiErrorMessage(err, "La création a échoué."));
+        this.error.set(extractApiErrorMessage(err, 'La création a échoué.'));
       },
     });
   }

@@ -15,7 +15,7 @@ export class PaymentService {
     return this.http.get<Payment>(`${environment.apiUrl}/payments/reservation/${reservationId}`);
   }
 
-  /** Admin only: validates a pending payment (e.g. cash received at the agency), which confirms the reservation and generates the ticket. */
+  /** Admin or Company (own trips only): validates a pending payment (e.g. cash received at the agency), which confirms the reservation and generates the ticket. */
   updateStatus(id: number, status: PaymentStatus) {
     return this.http.put<Payment>(`${environment.apiUrl}/payments/${id}/status`, JSON.stringify(status), {
       headers: { 'Content-Type': 'application/json' },

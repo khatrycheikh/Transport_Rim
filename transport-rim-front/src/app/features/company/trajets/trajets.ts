@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
@@ -7,9 +7,10 @@ import { Trip } from '../../../core/models/trip.model';
 import { BusService } from '../../../core/services/bus.service';
 import { TripService } from '../../../core/services/trip.service';
 import { extractApiErrorMessage } from '../../../core/utils/api-error';
+import { MAURITANIA_CITIES } from '../../../core/constants/cities';
 
 @Component({
-  selector: 'app-admin-trajets',
+  selector: 'app-company-trajets',
   imports: [FormsModule, DatePipe, DecimalPipe],
   templateUrl: './trajets.html',
   styleUrl: './trajets.scss',
@@ -17,6 +18,8 @@ import { extractApiErrorMessage } from '../../../core/utils/api-error';
 export class Trajets {
   private readonly tripService = inject(TripService);
   private readonly busService = inject(BusService);
+
+  protected readonly cities = MAURITANIA_CITIES;
 
   protected readonly trips = signal<Trip[]>([]);
   protected readonly buses = signal<Bus[]>([]);
@@ -34,14 +37,28 @@ export class Trajets {
   protected readonly formPrice = signal(500);
   protected readonly formAvailableSeats = signal(40);
 
+  /** Capacity of the currently selected bus, or null while none is selected. */
+  protected readonly selectedBusCapacity = computed(
+    () => this.buses().find((bus) => bus.id === this.formBusId())?.capacity ?? null,
+  );
+
   constructor() {
-    forkJoin({ trips: this.tripService.getAll(), buses: this.busService.getAll() }).subscribe({
+    forkJoin({ trips: this.tripService.getMine(), buses: this.busService.getAll() }).subscribe({
       next: ({ trips, buses }) => {
         this.trips.set(trips);
         this.buses.set(buses);
         this.loading.set(false);
       },
       error: () => this.loading.set(false),
+    });
+
+    // A new trip always starts with every seat of its bus available; keep the field in sync
+    // with the bus picked so it can never be created above the bus's real capacity.
+    effect(() => {
+      const capacity = this.selectedBusCapacity();
+      if (capacity !== null && !this.editingTrip()) {
+        this.formAvailableSeats.set(capacity);
+      }
     });
   }
 
@@ -76,6 +93,12 @@ export class Trajets {
   protected submitForm(): void {
     this.error.set('');
     const editing = this.editingTrip();
+
+    const capacity = this.selectedBusCapacity();
+    if (capacity !== null && this.formAvailableSeats() > capacity) {
+      this.error.set(`Les places disponibles ne peuvent pas dépasser la capacité du bus (${capacity}).`);
+      return;
+    }
 
     const payload = {
       departureCity: this.formDepartureCity(),

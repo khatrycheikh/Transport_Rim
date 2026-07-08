@@ -51,6 +51,8 @@
           <div class="absolute right-0 z-10 mt-2 w-48 rounded-lg border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-700 dark:bg-slate-900">
             @if (auth.role() === 'Admin') {
               <a routerLink="/admin" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800">Espace Admin</a>
+            } @else if (auth.role() === 'Company') {
+              <a routerLink="/compagnie" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800">Espace Compagnie</a>
             } @else {
               <a routerLink="/mon-compte/reservations" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800">Mes réservations</a>
               <a routerLink="/mon-compte/profil" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800">Mon profil</a>

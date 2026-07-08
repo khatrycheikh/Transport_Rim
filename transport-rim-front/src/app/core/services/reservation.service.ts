@@ -34,12 +34,12 @@ export class ReservationService {
       .pipe(tap(() => this.forgetId(id)));
   }
 
-  /** Admin only: list every reservation across all travelers. */
+  /** Admin: every reservation across all travelers. Company: only reservations for its own trips. */
   getAll() {
     return this.http.get<Reservation[]>(`${environment.apiUrl}/reservations`);
   }
 
-  /** Admin only: set a reservation's status, e.g. "Valider" -> Confirmed. */
+  /** Admin or Company (own trips only): set a reservation's status, e.g. "Valider" -> Confirmed. */
   setStatus(id: number, status: ReservationStatus) {
     return this.http.put<Reservation>(`${environment.apiUrl}/reservations/${id}/status`, { status });
   }

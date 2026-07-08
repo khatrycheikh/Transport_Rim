@@ -25,6 +25,9 @@ export class Companies {
   protected readonly formPhone = signal('');
   protected readonly formEmail = signal('');
   protected readonly formAddress = signal('');
+  protected readonly formAdminName = signal('');
+  protected readonly formAdminPhoneNumber = signal('');
+  protected readonly formAdminPassword = signal('');
 
   protected readonly filteredCompanies = computed(() => {
     const term = this.search().toLowerCase();
@@ -63,6 +66,9 @@ export class Companies {
     this.formPhone.set('');
     this.formEmail.set('');
     this.formAddress.set('');
+    this.formAdminName.set('');
+    this.formAdminPhoneNumber.set('');
+    this.formAdminPassword.set('');
     this.error.set('');
     this.showForm.set(true);
   }
@@ -81,6 +87,9 @@ export class Companies {
         phone: this.formPhone(),
         email: this.formEmail(),
         address: this.formAddress(),
+        adminName: this.formAdminName(),
+        adminPhoneNumber: this.formAdminPhoneNumber(),
+        adminPassword: this.formAdminPassword(),
       })
       .subscribe({
         next: (created) => {
@@ -93,5 +102,23 @@ export class Companies {
           this.error.set(extractApiErrorMessage(err, "La création a échoué."));
         },
       });
+  }
+
+  protected deleteCompany(company: Company): void {
+    if (!confirm(`Supprimer la compagnie ${company.name} ?`)) {
+      return;
+    }
+
+    this.updatingId.set(company.id);
+    this.companyService.delete(company.id).subscribe({
+      next: () => {
+        this.companies.update((list) => list.filter((c) => c.id !== company.id));
+        this.updatingId.set(null);
+      },
+      error: (err) => {
+        this.updatingId.set(null);
+        this.error.set(extractApiErrorMessage(err, 'La suppression a échoué.'));
+      },
+    });
   }
 }
